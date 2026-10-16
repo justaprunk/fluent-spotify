@@ -1,13 +1,13 @@
 ; Установщик Fluent Spotify (Inno Setup 6).
 ; Обычно собирается через installer\build-installer.ps1, который публикует приложение
 ; и передаёт сюда версию и путь к папке публикации:
-;   ISCC.exe /DAppVersion=0.1.03-beta /DAppFileVersion=0.1.3.0 /DPublishDir=..\publish\win-x64 FluentSpotify.iss
+;   ISCC.exe /DAppVersion=1.2.0 /DAppFileVersion=1.2.0.0 /DPublishDir=..\publish\win-x64 FluentSpotify.iss
 
 #ifndef AppVersion
-  #define AppVersion "0.1.03-beta"
+  #define AppVersion "1.2.0"
 #endif
 #ifndef AppFileVersion
-  #define AppFileVersion "0.1.3.0"
+  #define AppFileVersion "1.2.0.0"
 #endif
 #ifndef PublishDir
   #define PublishDir "..\publish\win-x64"
