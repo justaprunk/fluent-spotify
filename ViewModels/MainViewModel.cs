@@ -7,7 +7,7 @@ using FluentSpotify.Core.Playback;
 using FluentSpotify.Core.Settings;
 using Microsoft.UI.Dispatching;
 using SpotifyAPI.Web;
-using Wshm.Common.Diagnostics;
+using FluentSpotify.Shared.Diagnostics;
 
 namespace FluentSpotify.ViewModels;
 

@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FluentSpotify.Core.Api;
 using SpotifyAPI.Web;
-using Wshm.Common.Diagnostics;
+using FluentSpotify.Shared.Diagnostics;
 
 namespace FluentSpotify.ViewModels;
 

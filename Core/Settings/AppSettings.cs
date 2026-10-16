@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Wshm.Common.Diagnostics;
+using FluentSpotify.Shared.Diagnostics;
 
 namespace FluentSpotify.Core.Settings;
 

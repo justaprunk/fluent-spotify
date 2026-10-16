@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using SpotifyAPI.Web;
-using Wshm.Common.Diagnostics;
+using FluentSpotify.Shared.Diagnostics;
 
 namespace FluentSpotify.Core.Api;
 

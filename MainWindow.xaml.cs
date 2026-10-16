@@ -14,8 +14,7 @@ using SpotifyAPI.Web;
 using Windows.Graphics;
 using Windows.UI;
 using WinRT.Interop;
-using Wshm.Common.Ipc;
-using Wshm.Common.Windows;
+using FluentSpotify.Shared.Windows;
 
 namespace FluentSpotify;
 

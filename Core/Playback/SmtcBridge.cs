@@ -1,7 +1,7 @@
 using FluentSpotify.Core.Api;
 using FluentSpotify.Core.Settings;
 using SpotifyAPI.Web;
-using Wshm.Common.Diagnostics;
+using FluentSpotify.Shared.Diagnostics;
 using Windows.Media;
 using Windows.Media.Playback;
 using Windows.Storage.Streams;

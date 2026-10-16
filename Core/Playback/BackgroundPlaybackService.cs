@@ -1,7 +1,7 @@
 using FluentSpotify.Core.Api;
 using FluentSpotify.Core.Settings;
 using SpotifyAPI.Web;
-using Wshm.Common.Diagnostics;
+using FluentSpotify.Shared.Diagnostics;
 
 namespace FluentSpotify.Core.Playback;
 

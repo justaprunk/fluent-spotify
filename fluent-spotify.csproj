@@ -35,8 +35,4 @@
     <Content Include="Assets\AppIcon.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Относительный путь к общей библиотеке WSHM -->
-    <ProjectReference Include="..\..\..\..\wshm\src\ui\shared\wshm-ui-common.csproj" />
-  </ItemGroup>
 </Project>
