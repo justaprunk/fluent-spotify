@@ -51,6 +51,16 @@ If music is already playing on another device, such as your phone or another PC,
 > [!NOTE]
 > When "Launch Spotify in the background" is on, the official client shows the Windows media controls itself. The app's own SMTC bridge is turned off in this mode so Windows doesn't show two media cards.
 
+## ⬇️ Download
+
+Get the latest installer from **[Releases](https://github.com/justaprunk/fluent-spotify/releases/latest)**: `FluentSpotify-<version>-Setup-x64.exe`.
+
+- Installs for the current user into `%LOCALAPPDATA%\Programs\Fluent Spotify`, so it doesn't need admin rights.
+- Includes the .NET runtime and Windows App SDK, so you don't need to install anything else.
+- Adds a Start menu shortcut (and a desktop one if you want). Uninstall from **Settings → Apps**.
+
+> [!NOTE]
+> The installer isn't code-signed yet, so Windows SmartScreen may warn you. Click **More info → Run anyway**. You can check the file against the `.sha256` checksum attached to the release.
 ## 📋 Requirements
 
 - **Windows 10 1809** (build 17763) or later, or **Windows 11**, x64
@@ -114,6 +124,14 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:Platform=x64
 ```
 
 After building, `fluent-spotify.exe` is in `bin\x64\Release\net8.0-windows10.0.22621.0\`.
+
+To build the installer yourself (needs [Inno Setup 6](https://jrsoftware.org/isinfo.php): `winget install JRSoftware.InnoSetup`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File installer\build-installer.ps1
+```
+
+The script publishes a self-contained build and writes `installer\Output\FluentSpotify-<version>-Setup-x64.exe` plus its `.sha256`.
 
 > [!TIP]
 > With `--self-contained false`, the target machine needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).

@@ -152,6 +152,24 @@
                             Command="{x:Bind ViewModel.LogoutCommand}" />
                 </Grid>
             </Border>
+
+            <!-- О приложении -->
+            <TextBlock Text="О приложении" FontWeight="SemiBold" FontSize="14" Margin="0,16,0,4" />
+
+            <Border Style="{StaticResource SettingsCardStyle}">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Glyph="&#xE946;" FontSize="20" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Fluent Spotify" TextWrapping="Wrap" />
+                        <TextBlock Text="{x:Bind ViewModel.AppVersionText}" IsTextSelectionEnabled="True"
+                                   FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
         </StackPanel>
         </Grid>
     </ScrollViewer>

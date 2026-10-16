@@ -21,3 +21,6 @@ BundleArtifacts/
 # Local secrets
 .env
 *.local.json
+
+# Installer output
+installer/Output/

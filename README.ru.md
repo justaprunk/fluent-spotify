@@ -51,6 +51,16 @@
 > [!NOTE]
 > В режиме «Запускать Spotify в фоне» медиаэлементы Windows показывает сам официальный клиент. Встроенный мост SMTC приложения в этом режиме выключен, чтобы в системе не появлялось две карточки.
 
+## ⬇️ Скачать
+
+Последний установщик лежит в **[Releases](https://github.com/justaprunk/fluent-spotify/releases/latest)**: `FluentSpotify-<версия>-Setup-x64.exe`.
+
+- Ставится для текущего пользователя в `%LOCALAPPDATA%\Programs\Fluent Spotify`, права администратора не нужны.
+- Среда .NET и Windows App SDK уже внутри, отдельно ничего ставить не нужно.
+- Создаёт ярлык в меню «Пуск» (и, по желанию, на рабочем столе). Удаление — через **Параметры → Приложения**.
+
+> [!NOTE]
+> Установщик пока не подписан, поэтому Windows SmartScreen может показать предупреждение: нажмите **Подробнее → Выполнить в любом случае**. Файл можно сверить с контрольной суммой `.sha256` из релиза.
 ## 📋 Требования
 
 - **Windows 10 1809** (сборка 17763) или новее, либо **Windows 11**, x64
@@ -114,6 +124,14 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:Platform=x64
 ```
 
 После сборки `fluent-spotify.exe` лежит в `bin\x64\Release\net8.0-windows10.0.22621.0\`.
+
+Чтобы собрать установщик самостоятельно (нужен [Inno Setup 6](https://jrsoftware.org/isinfo.php): `winget install JRSoftware.InnoSetup`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File installer\build-installer.ps1
+```
+
+Скрипт публикует self-contained сборку и кладёт в `installer\Output\` файл `FluentSpotify-<версия>-Setup-x64.exe` и его `.sha256`.
 
 > [!TIP]
 > С `--self-contained false` на целевой машине должна быть установлена [среда выполнения .NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).

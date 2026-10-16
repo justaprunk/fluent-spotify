@@ -55,6 +55,12 @@ public partial class SettingsViewModel : ObservableObject
 
     public bool IsClientMissing { get; } = SpotifyClientLauncher.DetectInstall().Kind == SpotifyInstallKind.NotInstalled;
 
+    /// <summary>Версия приложения из InformationalVersion сборки (например, 0.1.01-beta).</summary>
+    public string AppVersionText { get; } = "Версия " + (typeof(SettingsViewModel).Assembly
+        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+        .FirstOrDefault()?.InformationalVersion ?? "неизвестна");
+
     public bool IsMicaSupported { get; } = MicaController.IsSupported();
     public bool IsAcrylicSupported { get; } = DesktopAcrylicController.IsSupported();
 
