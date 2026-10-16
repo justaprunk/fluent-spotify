@@ -1,3 +1,5 @@
+| Artist genres | The field is deprecated and often comes back empty, so the top genres in «Мои итоги» may be unavailable |
+| 📊 **My summary** («Мои итоги») | Top tracks, artists and genres over about a year, 6 months or 4 weeks, like Spotify Wrapped. You can save the summary as a private playlist |
 <p align="center">
   <img src="Assets/AppIcon.png" alt="Fluent Spotify" width="96" height="96" />
 </p>
