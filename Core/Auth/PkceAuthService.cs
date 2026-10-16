@@ -54,7 +54,7 @@ public class PkceAuthService
         if (!IsConfigured)
         {
             throw new InvalidOperationException(
-                "Не задан Spotify Client ID. Введите его на экране входа.");
+                Localizer.Get("Auth_NoClientId"));
         }
 
         var (verifier, challenge) = GeneratePkceCodes();
@@ -115,7 +115,7 @@ public class PkceAuthService
         }
         catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException && timeoutCts.IsCancellationRequested)
         {
-            throw new TimeoutException("Авторизация в браузере не была завершена.");
+            throw new TimeoutException(Localizer.Get("Auth_Timeout"));
         }
         finally
         {
@@ -124,7 +124,7 @@ public class PkceAuthService
 
         if (!string.IsNullOrEmpty(error) || string.IsNullOrEmpty(code))
         {
-            throw new InvalidOperationException($"Ошибка авторизации Spotify: {error ?? "отсутствует код авторизации"}");
+            throw new InvalidOperationException(Localizer.Format("Auth_Error", error ?? Localizer.Get("Auth_NoCode")));
         }
 
         // Обмениваем полученный auth code на токены
@@ -134,8 +134,8 @@ public class PkceAuthService
     private static async Task WriteBrowserResponseAsync(HttpListenerResponse response, bool success)
     {
         string message = success
-            ? "<h2>Fluent Spotify авторизован!</h2><p>Можете закрыть эту вкладку и вернуться в приложение.</p>"
-            : "<h2>Не удалось авторизоваться</h2><p>Вернитесь в приложение и попробуйте ещё раз.</p>";
+            ? $"<h2>{WebUtility.HtmlEncode(Localizer.Get("Auth_PageSuccessTitle"))}</h2><p>{WebUtility.HtmlEncode(Localizer.Get("Auth_PageSuccessText"))}</p>"
+            : $"<h2>{WebUtility.HtmlEncode(Localizer.Get("Auth_PageFailTitle"))}</h2><p>{WebUtility.HtmlEncode(Localizer.Get("Auth_PageFailText"))}</p>";
 
         byte[] responseBytes = Encoding.UTF8.GetBytes(
             "<html><head><meta charset='utf-8'></head>" +

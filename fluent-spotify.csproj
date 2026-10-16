@@ -43,4 +43,9 @@
     <Content Include="Assets\AppIcon.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Переводы интерфейса (Localization/Localizer.cs): Strings\<код языка>.json, встроены в сборку -->
+    <EmbeddedResource Include="Strings\*.json" />
+  </ItemGroup>
+
 </Project>

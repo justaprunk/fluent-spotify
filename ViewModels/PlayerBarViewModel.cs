@@ -17,7 +17,7 @@ public partial class PlayerBarViewModel : ObservableObject
     private CancellationTokenSource? _volumeCts;
 
     [ObservableProperty]
-    private string _trackTitle = "Не воспроизводится";
+    private string _trackTitle = Localizer.Get("Player_NotPlaying");
 
     [ObservableProperty]
     private string _artistName = "—";
@@ -69,7 +69,7 @@ public partial class PlayerBarViewModel : ObservableObject
         {
             if (playback == null || playback.Item is not FullTrack track)
             {
-                TrackTitle = "Не воспроизводится";
+                TrackTitle = Localizer.Get("Player_NotPlaying");
                 ArtistName = "—";
                 AlbumArtUrl = null;
                 IsPlaying = false;

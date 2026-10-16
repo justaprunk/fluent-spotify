@@ -224,25 +224,25 @@ public sealed class UpdateService : IDisposable
                 string when = string.Empty;
                 if (response.Headers.RetryAfter?.Delta is { } delta)
                 {
-                    when = $" Повторите через {Math.Max(1, (int)Math.Ceiling(delta.TotalMinutes))} мин.";
+                    when = " " + Localizer.Format("UpdErr_RetryInMinutes", Math.Max(1, (int)Math.Ceiling(delta.TotalMinutes)));
                 }
                 else if (response.Headers.TryGetValues("X-RateLimit-Reset", out var values)
                          && long.TryParse(values.FirstOrDefault(), out long reset))
                 {
-                    when = $" Повторите после {DateTimeOffset.FromUnixTimeSeconds(reset).ToLocalTime():HH:mm}.";
+                    when = " " + Localizer.Format("UpdErr_RetryAfter", Localizer.FormatTime(DateTimeOffset.FromUnixTimeSeconds(reset).ToLocalTime()));
                 }
 
                 bool limited = response.StatusCode == HttpStatusCode.TooManyRequests
                                || (response.Headers.TryGetValues("X-RateLimit-Remaining", out var remaining)
                                    && remaining.FirstOrDefault() == "0");
                 throw new UpdateException(limited
-                    ? "Превышен лимит запросов к GitHub." + when
-                    : $"GitHub отклонил запрос ({(int)response.StatusCode})." + when);
+                    ? Localizer.Get("UpdErr_RateLimit") + when
+                    : Localizer.Format("UpdErr_Rejected", (int)response.StatusCode) + when);
             }
             case HttpStatusCode.NotFound:
-                throw new UpdateException("Релизы на GitHub недоступны (репозиторий закрыт или не найден).");
+                throw new UpdateException(Localizer.Get("UpdErr_NotFound"));
             default:
-                throw new UpdateException($"GitHub ответил ошибкой {(int)response.StatusCode} {response.ReasonPhrase}.");
+                throw new UpdateException(Localizer.Format("UpdErr_Status", (int)response.StatusCode, response.ReasonPhrase));
         }
     }
 
@@ -261,7 +261,7 @@ public sealed class UpdateService : IDisposable
         }
         catch (Exception ex)
         {
-            LastError = ex is OperationCanceledException ? "Загрузка отменена." : DescribeError(ex);
+            LastError = ex is OperationCanceledException ? Localizer.Get("UpdErr_Cancelled") : DescribeError(ex);
             AppLog.Write(Component, $"Обновление не удалось: {LastError}");
             if (ex is not (UpdateException or OperationCanceledException)) AppLog.Write(Component, ex);
             IsInstalling = false;
@@ -318,7 +318,7 @@ public sealed class UpdateService : IDisposable
         {
             File.Delete(partial);
             AppLog.Write(Component, $"SHA-256 не совпадает: ожидалось {expectedHash}, получено {actualHash}");
-            throw new UpdateException("Контрольная сумма загруженного установщика не совпала — обновление отменено.");
+            throw new UpdateException(Localizer.Get("UpdErr_HashMismatch"));
         }
 
         File.Move(partial, target, overwrite: true);
@@ -336,7 +336,7 @@ public sealed class UpdateService : IDisposable
         string hash = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
         if (hash.Length != 64 || !hash.All(char.IsAsciiHexDigit))
         {
-            throw new UpdateException("Файл контрольной суммы в релизе повреждён — обновление отменено.");
+            throw new UpdateException(Localizer.Get("UpdErr_HashCorrupt"));
         }
         return hash;
     }
@@ -377,11 +377,11 @@ public sealed class UpdateService : IDisposable
     private static string DescribeError(Exception ex) => ex switch
     {
         UpdateException => ex.Message,
-        HttpRequestException { StatusCode: { } code } => $"Ошибка загрузки: {(int)code} {code}.",
-        HttpRequestException => "Нет подключения к интернету или GitHub недоступен.",
-        OperationCanceledException => "GitHub не ответил вовремя. Проверьте подключение к интернету.",
-        JsonException or KeyNotFoundException or InvalidOperationException => "GitHub вернул неожиданный ответ.",
-        IOException or UnauthorizedAccessException => $"Не удалось сохранить файл: {ex.Message}",
+        HttpRequestException { StatusCode: { } code } => Localizer.Format("UpdErr_Download", (int)code, code),
+        HttpRequestException => Localizer.Get("UpdErr_NoInternet"),
+        OperationCanceledException => Localizer.Get("UpdErr_Timeout"),
+        JsonException or KeyNotFoundException or InvalidOperationException => Localizer.Get("UpdErr_BadResponse"),
+        IOException or UnauthorizedAccessException => Localizer.Format("UpdErr_SaveFile", ex.Message),
         _ => ex.Message
     };
 

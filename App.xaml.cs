@@ -3,6 +3,7 @@ using FluentSpotify.Core.Auth;
 using FluentSpotify.Core.Playback;
 using FluentSpotify.Core.Settings;
 using FluentSpotify.Core.Updates;
+using FluentSpotify.Localization;
 using FluentSpotify.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -41,6 +42,13 @@ public partial class App : Application
     {
         var services = new ServiceCollection();
         var settings = new SettingsService();
+
+        // Язык интерфейса выбирается до создания окна и view-моделей: строки берутся при их создании.
+        // FLUENT_SPOTIFY_LANGUAGE (например, de-DE) перекрывает настройку — для проверки переводов.
+        Localizer.StartupSetting = settings.Current.Language;
+        Localizer.Initialize(Environment.GetEnvironmentVariable("FLUENT_SPOTIFY_LANGUAGE") is { Length: > 0 } language
+            ? language
+            : settings.Current.Language);
 
         // Приоритет: переменная окружения → сохранённые настройки (ввод на экране входа) → константа
         string clientId =

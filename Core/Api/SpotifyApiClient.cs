@@ -466,7 +466,7 @@ public class SpotifyApiClient : IDisposable
         }, ct);
 
         string playlistId = (string?)created?["id"]
-            ?? throw new InvalidOperationException("Spotify не вернул id созданного плейлиста.");
+            ?? throw new InvalidOperationException(Localizer.Get("Api_NoPlaylistId"));
 
         for (int i = 0; i < trackUris.Count; i += MaxItemsPerAddRequest)
         {

@@ -1,8 +1,11 @@
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FluentSpotify.Core.Playback;
 using FluentSpotify.Core.Settings;
+using FluentSpotify.Shared.Diagnostics;
 using Microsoft.UI.Composition.SystemBackdrops;
+using Microsoft.UI.Xaml;
 
 namespace FluentSpotify.ViewModels;
 
@@ -16,18 +19,25 @@ public partial class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<SettingsOption> BackdropOptions { get; } =
     [
-        new("Mica", "Mica", "Мягко окрашивается цветом обоев. Рекомендуется для основного окна."),
-        new("MicaAlt", "Mica Alt", "Более насыщенный вариант Mica — сильнее заметен цвет обоев."),
-        new("Acrylic", "Acrylic", "Полупрозрачное размытие того, что находится позади окна."),
-        new("AcrylicThin", "Acrylic Thin", "Более прозрачный и светлый вариант Acrylic."),
-        new("None", "Без материала", "Сплошной фон без эффектов.")
+        new("Mica", "Mica", Localizer.Get("Backdrop_Mica_Desc")),
+        new("MicaAlt", "Mica Alt", Localizer.Get("Backdrop_MicaAlt_Desc")),
+        new("Acrylic", "Acrylic", Localizer.Get("Backdrop_Acrylic_Desc")),
+        new("AcrylicThin", "Acrylic Thin", Localizer.Get("Backdrop_AcrylicThin_Desc")),
+        new("None", Localizer.Get("Backdrop_None"), Localizer.Get("Backdrop_None_Desc"))
     ];
 
     public IReadOnlyList<SettingsOption> ThemeOptions { get; } =
     [
-        new("System", "Как в Windows"),
-        new("Light", "Светлая"),
-        new("Dark", "Тёмная")
+        new("System", Localizer.Get("Theme_System")),
+        new("Light", Localizer.Get("Theme_Light")),
+        new("Dark", Localizer.Get("Theme_Dark"))
+    ];
+
+    /// <summary>«Как в системе» (пустое значение) и языки, каждый — названием на самом языке.</summary>
+    public IReadOnlyList<SettingsOption> LanguageOptions { get; } =
+    [
+        new(string.Empty, Localizer.Get("Settings_LanguageSystem")),
+        .. Localizer.Languages.Select(l => new SettingsOption(l.Code, l.NativeName))
     ];
 
     [ObservableProperty]
@@ -35,6 +45,22 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private SettingsOption? _selectedTheme;
+
+    [ObservableProperty]
+    private SettingsOption? _selectedLanguage;
+
+    /// <summary>Язык в настройках отличается от того, с которым запущено приложение.</summary>
+    [ObservableProperty]
+    private bool _isRestartRequired;
+
+    [ObservableProperty]
+    private string _restartTitle = string.Empty;
+
+    [ObservableProperty]
+    private string _restartMessage = string.Empty;
+
+    [ObservableProperty]
+    private string _restartButtonText = string.Empty;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsOwnThemeEnabled))]
@@ -48,18 +74,12 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>Какой официальный клиент найден на этом ПК.</summary>
     public string ClientStatusText { get; } = SpotifyClientLauncher.DetectInstall().Kind switch
     {
-        SpotifyInstallKind.Desktop => "Найден клиент Spotify (установщик с сайта).",
-        SpotifyInstallKind.MicrosoftStore => "Найден клиент Spotify из Microsoft Store.",
-        _ => "Официальный клиент Spotify не найден — установите его из Microsoft Store или с spotify.com."
+        SpotifyInstallKind.Desktop => Localizer.Get("Client_Desktop"),
+        SpotifyInstallKind.MicrosoftStore => Localizer.Get("Client_Store"),
+        _ => Localizer.Get("Client_Missing")
     };
 
     public bool IsClientMissing { get; } = SpotifyClientLauncher.DetectInstall().Kind == SpotifyInstallKind.NotInstalled;
-
-    /// <summary>Версия приложения из InformationalVersion сборки (например, 0.1.01-beta).</summary>
-    public string AppVersionText { get; } = "Версия " + (typeof(SettingsViewModel).Assembly
-        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
-        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
-        .FirstOrDefault()?.InformationalVersion ?? "неизвестна");
 
     public bool IsMicaSupported { get; } = MicaController.IsSupported();
     public bool IsAcrylicSupported { get; } = DesktopAcrylicController.IsSupported();
@@ -68,14 +88,14 @@ public partial class SettingsViewModel : ObservableObject
         (IsMicaSupported, IsAcrylicSupported) switch
         {
             (true, true) => string.Empty,
-            (false, true) => "Mica доступна только в Windows 11 — вместо неё будет сплошной фон.",
-            (true, false) => "Acrylic недоступен в этой системе — вместо него будет сплошной фон.",
-            _ => "Системные материалы недоступны в этой системе — будет использоваться сплошной фон."
+            (false, true) => Localizer.Get("Support_NoMica"),
+            (true, false) => Localizer.Get("Support_NoAcrylic"),
+            _ => Localizer.Get("Support_NoBackdrops")
         };
 
     public bool HasSupportNote => SupportNote.Length > 0;
 
-    /// <summary>Раздел «Обновления»: общее состояние с InfoBar главного окна.</summary>
+    /// <summary>Раздел «О приложении»: версия и обновления, общее состояние с InfoBar главного окна.</summary>
     public UpdateViewModel Updates { get; }
 
     public SettingsViewModel(SettingsService settings, MainViewModel main, UpdateViewModel updates)
@@ -87,8 +107,10 @@ public partial class SettingsViewModel : ObservableObject
         var current = settings.Current;
         SelectedBackdrop = BackdropOptions.FirstOrDefault(o => o.Value == current.Backdrop) ?? BackdropOptions[0];
         SelectedTheme = ThemeOptions.FirstOrDefault(o => o.Value == current.Theme) ?? ThemeOptions[0];
+        SelectedLanguage = LanguageOptions.FirstOrDefault(o => o.Value == (current.Language ?? string.Empty)) ?? LanguageOptions[0];
         UseShellTheme = current.UseShellTheme;
         LaunchClientInBackground = current.LaunchClientInBackground;
+        UpdateRestartState();
         _initializing = false;
     }
 
@@ -104,6 +126,26 @@ public partial class SettingsViewModel : ObservableObject
         _settings.Update(s => s.Theme = value.Value);
     }
 
+    partial void OnSelectedLanguageChanged(SettingsOption? value)
+    {
+        if (_initializing || value == null) return;
+        _settings.Update(s => s.Language = value.Value.Length > 0 ? value.Value : null, notify: false);
+        UpdateRestartState();
+    }
+
+    /// <summary>
+    /// Строки берутся при создании окна и страниц, поэтому новый язык включается после перезапуска.
+    /// Подсказку показываем на выбранном языке — её поймёт тот, кто его выбрал.
+    /// </summary>
+    private void UpdateRestartState()
+    {
+        string target = Localizer.Resolve(_settings.Current.Language);
+        IsRestartRequired = target != Localizer.Resolve(Localizer.StartupSetting);
+        RestartTitle = Localizer.GetIn(target, "Settings_RestartTitle");
+        RestartMessage = Localizer.GetIn(target, "Settings_RestartMessage");
+        RestartButtonText = Localizer.GetIn(target, "Settings_Restart");
+    }
+
     partial void OnUseShellThemeChanged(bool value)
     {
         if (_initializing) return;
@@ -114,6 +156,24 @@ public partial class SettingsViewModel : ObservableObject
     {
         if (_initializing) return;
         _settings.Update(s => s.LaunchClientInBackground = value);
+    }
+
+    [RelayCommand]
+    private void Restart()
+    {
+        try
+        {
+            if (Environment.ProcessPath is { } exe)
+            {
+                Process.Start(new ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = AppContext.BaseDirectory });
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write("Settings", ex);
+            return;
+        }
+        Application.Current.Exit();
     }
 
     [RelayCommand]

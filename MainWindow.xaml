@@ -6,6 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:win="using:FluentSpotify.Shared.Windows"
     xmlns:views="using:FluentSpotify.Views"
+    xmlns:l="using:FluentSpotify.Localization"
     mc:Ignorable="d"
     Title="Fluent Spotify">
 
@@ -47,10 +48,10 @@
                                  Visibility="{x:Bind Updates.IsInstalling, Mode=OneWay}" />
                     <StackPanel Orientation="Horizontal" Spacing="8"
                                 Visibility="{x:Bind Updates.CanInstall, Mode=OneWay}">
-                        <Button Content="Обновить" Style="{ThemeResource AccentButtonStyle}"
+                        <Button Content="{l:Tr Key=Update_Install}" Style="{ThemeResource AccentButtonStyle}"
                                 Command="{x:Bind Updates.InstallCommand}" />
-                        <Button Content="Подробнее" Command="{x:Bind Updates.ShowDetailsCommand}" />
-                        <HyperlinkButton Content="Пропустить эту версию" Command="{x:Bind Updates.SkipCommand}" />
+                        <Button Content="{l:Tr Key=Update_Details}" Command="{x:Bind Updates.ShowDetailsCommand}" />
+                        <HyperlinkButton Content="{l:Tr Key=Update_Skip}" Command="{x:Bind Updates.SkipCommand}" />
                     </StackPanel>
                 </StackPanel>
             </InfoBar.Content>
@@ -62,36 +63,36 @@
               HorizontalAlignment="Center" VerticalAlignment="Center">
             <StackPanel Spacing="16" MaxWidth="360" HorizontalAlignment="Center">
                 <Image Source="ms-appx:///Assets/AppIcon.png" Width="96" Height="96" HorizontalAlignment="Center" />
-                <TextBlock Text="Музыка для каждого момента" FontSize="20" FontWeight="Bold" TextAlignment="Center" />
-                <TextBlock Text="Войдите через браузер для безопасного подключения вашей медиатеки Spotify по протоколу PKCE."
+                <TextBlock Text="{l:Tr Key=Login_Title}" FontSize="20" FontWeight="Bold" TextAlignment="Center" />
+                <TextBlock Text="{l:Tr Key=Login_Subtitle}"
                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            TextWrapping="Wrap" TextAlignment="Center" />
                 <!-- Первичная настройка: Client ID приложения из Spotify Developer Dashboard -->
                 <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.IsClientIdMissing, Mode=OneWay}">
                     <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-                        <Run Text="1. Создайте приложение на" />
+                        <Run Text="{l:Tr Key=Login_Step1}" />
                         <Hyperlink NavigateUri="https://developer.spotify.com/dashboard">developer.spotify.com/dashboard</Hyperlink>
-                        <Run Text="(API: Web API)." />
+                        <Run Text="{l:Tr Key=Login_Step1Suffix}" />
                         <LineBreak />
-                        <Run Text="2. В Redirect URIs добавьте:" />
+                        <Run Text="{l:Tr Key=Login_Step2}" />
                     </TextBlock>
                     <TextBox Text="{x:Bind ViewModel.RedirectUri}" IsReadOnly="True" FontSize="12" />
-                    <TextBlock Text="3. Вставьте Client ID из настроек приложения:"
+                    <TextBlock Text="{l:Tr Key=Login_Step3}"
                                TextWrapping="Wrap" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <TextBox Text="{x:Bind ViewModel.ClientIdInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             PlaceholderText="Client ID (32 символа)" FontSize="12" />
-                    <Button Content="Сохранить Client ID"
+                             PlaceholderText="{l:Tr Key=Login_ClientIdPlaceholder}" FontSize="12" />
+                    <Button Content="{l:Tr Key=Login_SaveClientId}"
                             Command="{x:Bind ViewModel.SaveClientIdCommand}"
                             HorizontalAlignment="Stretch" />
                 </StackPanel>
 
-                <Button Content="Войти в аккаунт Spotify"
+                <Button Content="{l:Tr Key=Login_SignIn}"
                         Command="{x:Bind ViewModel.LoginCommand}"
                         IsEnabled="{x:Bind ViewModel.IsClientIdConfigured, Mode=OneWay}"
                         Style="{ThemeResource AccentButtonStyle}"
                         HorizontalAlignment="Center"
                         Padding="24,8" Margin="0,8,0,0" />
-                <HyperlinkButton Content="Изменить Client ID"
+                <HyperlinkButton Content="{l:Tr Key=Login_ChangeClientId}"
                                  Command="{x:Bind ViewModel.EditClientIdCommand}"
                                  Visibility="{x:Bind ViewModel.IsClientIdConfigured, Mode=OneWay}"
                                  HorizontalAlignment="Center" FontSize="12" />
@@ -116,37 +117,37 @@
                         SelectionChanged="NavView_SelectionChanged"
                         DisplayModeChanged="NavView_DisplayModeChanged">
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="Главная" Tag="Home">
+                <NavigationViewItem Content="{l:Tr Key=Nav_Home}" Tag="Home">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE80F;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Поиск" Tag="Search">
+                <NavigationViewItem Content="{l:Tr Key=Nav_Search}" Tag="Search">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE721;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Любимые треки" Tag="Liked">
+                <NavigationViewItem Content="{l:Tr Key=Nav_Liked}" Tag="Liked">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEB51;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Мои итоги" Tag="Wrapped">
+                <NavigationViewItem Content="{l:Tr Key=Nav_Wrapped}" Tag="Wrapped">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE9D2;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItemHeader Content="Моя медиатека" />
+                <NavigationViewItemHeader Content="{l:Tr Key=Nav_Library}" />
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
-                <NavigationViewItem Content="Выйти" Tag="Logout" SelectsOnInvoked="False" Tapped="LogoutItem_Tapped">
+                <NavigationViewItem Content="{l:Tr Key=Nav_Logout}" Tag="Logout" SelectsOnInvoked="False" Tapped="LogoutItem_Tapped">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xF3B1;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <!-- Свой пункт вместо встроенного: встроенный подписан "Settings" и не локализуется -->
-                <NavigationViewItem Content="Настройки" Tag="Settings">
+                <NavigationViewItem Content="{l:Tr Key=Nav_Settings}" Tag="Settings">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" />
                     </NavigationViewItem.Icon>

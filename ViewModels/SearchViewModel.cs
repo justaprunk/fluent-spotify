@@ -90,7 +90,7 @@ public partial class SearchViewModel : ObservableObject
             AppLog.Write("SearchViewModel", ex);
             if (!token.IsCancellationRequested)
             {
-                ErrorMessage = $"Ошибка поиска: {ex.Message}";
+                ErrorMessage = Localizer.Format("Search_Error", ex.Message);
                 IsLoading = false;
             }
         }

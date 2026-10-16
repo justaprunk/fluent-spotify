@@ -38,6 +38,9 @@ public sealed partial class MainWindow : FluentWindow
         _settings = settings;
         InitializeComponent();
 
+        // Язык разметки: по нему выбираются шрифты для иероглифов (японские, китайские, корейские начертания)
+        RootGrid.Language = Localizer.CurrentLanguage;
+
         // Привязка HWND к AppWindow для кастомизации заголовка
         var hwnd = WindowNative.GetWindowHandle(this);
         _appWindow = AppWindow.GetFromWindowId(Win32Interop.GetWindowIdFromWindow(hwnd));

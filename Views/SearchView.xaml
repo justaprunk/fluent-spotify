@@ -2,6 +2,7 @@
     x:Class="FluentSpotify.Views.SearchView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:FluentSpotify.Localization"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:FluentSpotify.ViewModels"
@@ -20,10 +21,10 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBox PlaceholderText="Что хочешь включить?"
+            <TextBox PlaceholderText="{l:Tr Key=Search_Placeholder}"
                      Text="{x:Bind ViewModel.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                 <TextBox.Header>
-                    <TextBlock Text="Поиск" FontSize="24" FontWeight="Bold" Margin="0,0,0,8" />
+                    <TextBlock Text="{l:Tr Key=Nav_Search}" FontSize="24" FontWeight="Bold" Margin="0,0,0,8" />
                 </TextBox.Header>
             </TextBox>
 

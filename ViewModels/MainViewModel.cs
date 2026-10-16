@@ -43,8 +43,8 @@ public partial class MainViewModel : ObservableObject
     private int? _likedTracksCount;
 
     public string LikedTracksText => LikedTracksCount is int count
-        ? $"Коллекция • {TextFormat.Tracks(count)}"
-        : "Коллекция";
+        ? Localizer.Format("Home_CollectionTracks", TextFormat.Tracks(count))
+        : Localizer.Get("Home_Collection");
 
     public string RedirectUri => PkceAuthService.RedirectUri;
 
@@ -71,7 +71,7 @@ public partial class MainViewModel : ObservableObject
         _apiClient.SessionExpired += () => RunOnUi(() =>
         {
             ResetState();
-            ErrorMessage = "Сессия Spotify истекла. Войдите снова.";
+            ErrorMessage = Localizer.Get("Main_SessionExpired");
         });
     }
 
@@ -100,7 +100,7 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             AppLog.Write("MainViewModel", ex);
-            ErrorMessage = $"Не удалось подключиться к Spotify: {ex.Message}";
+            ErrorMessage = Localizer.Format("Main_ConnectFailed", ex.Message);
         }
         finally
         {
@@ -153,8 +153,7 @@ public partial class MainViewModel : ObservableObject
         string value = ClientIdInput.Trim();
         if (!AppSettings.IsValidClientId(value))
         {
-            ErrorMessage = "Client ID должен состоять из 32 шестнадцатеричных символов (0–9, a–f). " +
-                           "Скопируйте его из Spotify Developer Dashboard → ваше приложение → Settings.";
+            ErrorMessage = Localizer.Get("Main_InvalidClientId");
             return;
         }
 

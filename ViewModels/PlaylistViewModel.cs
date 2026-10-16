@@ -23,10 +23,10 @@ public partial class PlaylistViewModel : ObservableObject
     private string _playlistUri = string.Empty;
 
     [ObservableProperty]
-    private string _kindLabel = "ПЛЕЙЛИСТ";
+    private string _kindLabel = Localizer.Get("Playlist_KindPlaylist");
 
     [ObservableProperty]
-    private string _name = "Загрузка...";
+    private string _name = Localizer.Get("Playlist_Loading");
 
     [ObservableProperty]
     private string? _description;
@@ -85,11 +85,11 @@ public partial class PlaylistViewModel : ObservableObject
             if (playlistId == SpotifyApiClient.LikedSongsId)
             {
                 IsLikedSongs = true;
-                KindLabel = "КОЛЛЕКЦИЯ";
-                Name = "Любимые треки";
+                KindLabel = Localizer.Get("Playlist_KindCollection");
+                Name = Localizer.Get("Nav_Liked");
                 Description = null;
                 CoverUrl = null;
-                OwnerName = "Вы";
+                OwnerName = Localizer.Get("Playlist_You");
                 TotalTracks = await _apiClient.GetSavedTracksTotalAsync();
                 PlaylistUri = await _apiClient.GetLikedSongsContextUriAsync() ?? string.Empty;
                 pages = _apiClient.EnumerateSavedTracksAsync(ct);
@@ -97,7 +97,7 @@ public partial class PlaylistViewModel : ObservableObject
             else
             {
                 IsLikedSongs = false;
-                KindLabel = "ПЛЕЙЛИСТ";
+                KindLabel = Localizer.Get("Playlist_KindPlaylist");
                 var details = await _apiClient.GetPlaylistDetailsAsync(playlistId);
                 if (details == null || ct.IsCancellationRequested) return;
 
@@ -110,8 +110,7 @@ public partial class PlaylistViewModel : ObservableObject
 
                 if (!details.ContentsAvailable)
                 {
-                    ErrorMessage = "Spotify не отдаёт треки чужих плейлистов приложениям в режиме разработки " +
-                                   "(ограничение Web API с февраля 2026). Плейлист можно воспроизвести целиком кнопкой ▶.";
+                    ErrorMessage = Localizer.Get("Playlist_ErrDevMode");
                     return;
                 }
 
@@ -139,8 +138,7 @@ public partial class PlaylistViewModel : ObservableObject
             AppLog.Write("PlaylistViewModel", ex);
             if (!ct.IsCancellationRequested)
             {
-                ErrorMessage = "Spotify запретил доступ к этому плейлисту (403). " +
-                               "Для приложений в режиме разработки доступны только ваши плейлисты и плейлисты, где вы соавтор.";
+                ErrorMessage = Localizer.Get("Playlist_Err403");
             }
         }
         catch (Exception ex)
@@ -148,7 +146,7 @@ public partial class PlaylistViewModel : ObservableObject
             AppLog.Write("PlaylistViewModel", ex);
             if (!ct.IsCancellationRequested)
             {
-                ErrorMessage = $"Не удалось загрузить треки: {ex.Message}";
+                ErrorMessage = Localizer.Format("Playlist_ErrLoad", ex.Message);
             }
         }
         finally

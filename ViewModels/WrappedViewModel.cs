@@ -56,9 +56,7 @@ public partial class WrappedViewModel : ObservableObject
     // В сетке артистов — топ-20, чтобы список треков не уезжал далеко вниз; жанры считаем по всем 50
     private const int ArtistsShown = 20;
 
-    private const string ReloginMessage =
-        "Для «Моих итогов» приложению нужны новые разрешения Spotify: статистика прослушиваний " +
-        "и создание плейлистов. Войдите в аккаунт ещё раз и подтвердите доступ — медиатека и настройки сохранятся.";
+    private static string ReloginMessage => Localizer.Get("Wrapped_ReloginMessage");
 
     private sealed record PeriodData(IReadOnlyList<FullTrack> Tracks, IReadOnlyList<FullArtist> Artists);
 
@@ -70,9 +68,9 @@ public partial class WrappedViewModel : ObservableObject
 
     public IReadOnlyList<WrappedPeriod> Periods { get; } =
     [
-        new("long_term", "Примерно год"),
-        new("medium_term", "6 месяцев"),
-        new("short_term", "4 недели")
+        new("long_term", Localizer.Get("Period_Long")),
+        new("medium_term", Localizer.Get("Period_Medium")),
+        new("short_term", Localizer.Get("Period_Short"))
     ];
 
     [ObservableProperty]
@@ -163,9 +161,8 @@ public partial class WrappedViewModel : ObservableObject
 
             if (TopTracks.Count == 0 && TopArtists.Count == 0)
             {
-                ShowStatus(InfoBarSeverity.Informational, "Пока нечего подводить",
-                    $"Spotify ещё не собрал статистику за период «{period.Label}». " +
-                    "Послушайте музыку побольше или выберите более длинный период.");
+                ShowStatus(InfoBarSeverity.Informational, Localizer.Get("Wrapped_EmptyTitle"),
+                    Localizer.Format("Wrapped_EmptyMessage", period.Label));
             }
         }
         catch (OperationCanceledException)
@@ -184,7 +181,7 @@ public partial class WrappedViewModel : ObservableObject
             AppLog.Write("WrappedViewModel", ex);
             if (ct.IsCancellationRequested) return;
             Clear();
-            ShowStatus(InfoBarSeverity.Error, "Не удалось загрузить итоги", DescribeError(ex));
+            ShowStatus(InfoBarSeverity.Error, Localizer.Get("Wrapped_LoadFailed"), DescribeError(ex));
         }
         finally
         {
@@ -217,7 +214,7 @@ public partial class WrappedViewModel : ObservableObject
             AppLog.Write("WrappedViewModel", ex);
             IsLoading = false;
             ShowRelogin();
-            StatusMessage = $"Вход не завершён: {ex.Message}";
+            StatusMessage = Localizer.Format("Wrapped_SignInIncomplete", ex.Message);
             return;
         }
 
@@ -256,22 +253,22 @@ public partial class WrappedViewModel : ObservableObject
             return;
         }
 
-        string date = DateTime.Now.ToString("d MMMM yyyy", CultureInfo.GetCultureInfo("ru-RU"));
-        string name = $"Мои итоги — {period.Label} ({date})";
+        string date = Localizer.FormatDate(DateTimeOffset.Now);
+        string name = Localizer.Format("Wrapped_PlaylistName", period.Label, date);
 
         IsLoading = true;
         ClearStatus();
         try
         {
             await _apiClient.CreatePlaylistWithTracksAsync(name,
-                $"Топ-{uris.Count} ваших треков за период «{period.Label}». Собрано в Fluent Spotify.",
+                Localizer.Format("Wrapped_PlaylistDescription", uris.Count, period.Label),
                 isPublic: false, uris);
 
             // Новый плейлист сразу появляется в медиатеке (меню слева и главная)
             await _main.RefreshPlaylistsCommand.ExecuteAsync(null);
 
-            ShowStatus(InfoBarSeverity.Success, "Плейлист сохранён",
-                $"«{name}» — {TextFormat.Tracks(uris.Count)}. Он приватный и уже есть в вашей медиатеке.");
+            ShowStatus(InfoBarSeverity.Success, Localizer.Get("Wrapped_Saved"),
+                Localizer.Format("Wrapped_SavedMessage", name, TextFormat.Tracks(uris.Count)));
         }
         catch (SpotifyScopeException ex)
         {
@@ -281,7 +278,7 @@ public partial class WrappedViewModel : ObservableObject
         catch (Exception ex)
         {
             AppLog.Write("WrappedViewModel", ex);
-            ShowStatus(InfoBarSeverity.Error, "Не удалось сохранить плейлист", DescribeError(ex));
+            ShowStatus(InfoBarSeverity.Error, Localizer.Get("Wrapped_SaveFailed"), DescribeError(ex));
         }
         finally
         {
@@ -327,8 +324,8 @@ public partial class WrappedViewModel : ObservableObject
         TopArtistImageUrl = topArtist?.ImageUrl;
 
         var topGenre = TopGenres.FirstOrDefault();
-        TopGenreName = topGenre?.Name ?? "Нет данных";
-        TopGenreDetails = topGenre?.ArtistsText ?? "Spotify не указал жанры артистов";
+        TopGenreName = topGenre?.Name ?? Localizer.Get("Wrapped_NoData");
+        TopGenreDetails = topGenre?.ArtistsText ?? Localizer.Get("Wrapped_NoGenreDetails");
 
         OnPropertyChanged(nameof(HasData));
         OnPropertyChanged(nameof(HasGenres));
@@ -368,9 +365,11 @@ public partial class WrappedViewModel : ObservableObject
             yield return new GenreItem
             {
                 Rank = ++rank,
-                Name = CultureInfo.GetCultureInfo("ru-RU").TextInfo.ToTitleCase(genre),
+                Name = Localizer.Culture.TextInfo.ToTitleCase(genre),
                 Share = Math.Round(value.Weight / max * 100),
-                ArtistsText = string.Join(", ", names) + (more > 0 ? $" и ещё {more}" : string.Empty)
+                ArtistsText = more > 0
+                    ? Localizer.Format("Wrapped_AndMore", string.Join(", ", names), more)
+                    : string.Join(", ", names)
             };
         }
     }
@@ -389,7 +388,7 @@ public partial class WrappedViewModel : ObservableObject
     {
         NeedsRelogin = true;
         StatusSeverity = InfoBarSeverity.Warning;
-        StatusTitle = "Нужно войти заново";
+        StatusTitle = Localizer.Get("Wrapped_ReloginTitle");
         StatusMessage = ReloginMessage;
     }
 
@@ -411,11 +410,10 @@ public partial class WrappedViewModel : ObservableObject
     private static string DescribeError(Exception ex) => ex switch
     {
         HttpRequestException { StatusCode: HttpStatusCode.Forbidden } =>
-            "Spotify отклонил запрос (403). Если приложение в режиме разработки, проверьте, что ваш аккаунт " +
-            "добавлен в User Management в Spotify Developer Dashboard.",
+            Localizer.Get("Wrapped_Err403"),
         HttpRequestException { StatusCode: HttpStatusCode.TooManyRequests } =>
-            "Слишком много запросов к Spotify. Подождите минуту и нажмите «Обновить».",
-        HttpRequestException { StatusCode: null } => "Нет соединения со Spotify. Проверьте интернет и попробуйте ещё раз.",
+            Localizer.Get("Wrapped_Err429"),
+        HttpRequestException { StatusCode: null } => Localizer.Get("Wrapped_ErrOffline"),
         _ => ex.Message
     };
 }

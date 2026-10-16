@@ -22,8 +22,6 @@ public partial class UpdateViewModel : ObservableObject
     private readonly DispatcherQueue _dispatcher;
     private string? _dismissedVersion;
 
-    // Интерфейс только на русском — даты и размеры форматируем так же, независимо от языка Windows
-    private static readonly CultureInfo Russian = CultureInfo.GetCultureInfo("ru-RU");
 
     public UpdateViewModel(UpdateService updates, SettingsService settings)
     {
@@ -41,11 +39,14 @@ public partial class UpdateViewModel : ObservableObject
 
     private UpdateInfo? Available => _updates.Available;
 
-    public string CurrentVersionText => "Версия " + _updates.CurrentVersion;
+    public string CurrentVersionText => Localizer.Format("About_Version", _updates.CurrentVersion);
 
     public string LastCheckText => _updates.LastCheck is { } time
-        ? "Последняя проверка: " + FormatTime(time)
-        : "Проверка ещё не выполнялась";
+        ? Localizer.Format("Update_LastCheck", FormatTime(time))
+        : Localizer.Get("Update_NeverChecked");
+
+    /// <summary>Подпись карточки «О приложении»: версия и время последней проверки.</summary>
+    public string VersionSummaryText => $"{CurrentVersionText} · {LastCheckText}";
 
     public bool IsChecking => _updates.IsChecking;
 
@@ -64,20 +65,20 @@ public partial class UpdateViewModel : ObservableObject
     public bool CanSkip => IsUpdateAvailable && !IsAvailableSkipped && !IsBusy;
 
     public string AvailableTitle => Available is { } a
-        ? $"Доступна версия {a.Version}" + (a.IsPreRelease ? " (бета)" : string.Empty)
+        ? Localizer.Format(a.IsPreRelease ? "Update_AvailableBeta" : "Update_Available", a.Version)
         : string.Empty;
 
     public string AvailableDetails => Available is { } a
         ? string.Join(" · ", new[]
             {
                 a.Title != a.Tag ? a.Title : null,
-                a.PublishedAt is { } p ? "опубликована " + p.ToLocalTime().ToString("d MMMM yyyy", Russian) : null,
-                string.Format(Russian, "{0:0.#} МБ", a.SetupSize / 1024.0 / 1024.0),
-                IsAvailableSkipped ? "пропущена" : null
+                a.PublishedAt is { } p ? Localizer.Format("Update_Published", Localizer.FormatDate(p.ToLocalTime())) : null,
+                Localizer.Format("Update_SizeMb", a.SetupSize / 1024.0 / 1024.0),
+                IsAvailableSkipped ? Localizer.Get("Update_Skipped") : null
             }.Where(s => s != null))
         : string.Empty;
 
-    public string ReleaseNotes => Available?.Notes is { Length: > 0 } notes ? PlainText(notes) : "Описание изменений не указано.";
+    public string ReleaseNotes => Available?.Notes is { Length: > 0 } notes ? PlainText(notes) : Localizer.Get("Update_NoNotes");
 
     /// <summary>Описание релиза пишется в Markdown — убираем разметку, которая мешает читать простой текст.</summary>
     private static string PlainText(string markdown) => string.Join('\n', markdown
@@ -94,11 +95,11 @@ public partial class UpdateViewModel : ObservableObject
 
     /// <summary>Строка состояния под кнопкой «Проверить обновления».</summary>
     public string StatusText =>
-        IsChecking ? "Проверка обновлений…"
-        : IsInstalling ? $"Загрузка обновления… {DownloadProgress:0}%"
+        IsChecking ? Localizer.Get("Update_Checking")
+        : IsInstalling ? Localizer.Format("Update_Downloading", DownloadProgress)
         : _updates.LastError is { } error ? error
         : IsUpdateAvailable ? AvailableTitle
-        : _updates.LastCheck != null ? "Установлена последняя версия"
+        : _updates.LastCheck != null ? Localizer.Get("Update_UpToDate")
         : string.Empty;
 
     public bool HasError => _updates.LastError != null && !IsBusy;
@@ -125,9 +126,9 @@ public partial class UpdateViewModel : ObservableObject
     }
 
     public string InfoBarMessage =>
-        IsInstalling ? $"Загрузка обновления… {DownloadProgress:0}%. Приложение перезапустится после установки."
-        : _installError is { } error ? "Не удалось обновить: " + error
-        : "Установка займёт меньше минуты, приложение перезапустится само.";
+        IsInstalling ? Localizer.Format("Update_DownloadingRestart", DownloadProgress)
+        : _installError is { } error ? Localizer.Format("Update_Failed", error)
+        : Localizer.Get("Update_Ready");
 
     public InfoBarSeverity InfoBarSeverity => !IsInstalling && _installError != null
         ? InfoBarSeverity.Error
@@ -181,7 +182,7 @@ public partial class UpdateViewModel : ObservableObject
             return;
         }
 
-        _installError = _updates.LastError ?? "неизвестная ошибка.";
+        _installError = _updates.LastError ?? Localizer.Get("Update_UnknownError");
         Refresh();
     }
 
@@ -226,8 +227,8 @@ public partial class UpdateViewModel : ObservableObject
     private static string FormatTime(DateTimeOffset time)
     {
         var local = time.ToLocalTime();
-        return local.Date == DateTime.Today ? "сегодня в " + local.ToString("HH:mm")
-            : local.Date == DateTime.Today.AddDays(-1) ? "вчера в " + local.ToString("HH:mm")
-            : local.ToString("d MMMM yyyy, HH:mm", Russian);
+        return local.Date == DateTime.Today ? Localizer.Format("Time_TodayAt", Localizer.FormatTime(local))
+            : local.Date == DateTime.Today.AddDays(-1) ? Localizer.Format("Time_YesterdayAt", Localizer.FormatTime(local))
+            : Localizer.Format("Format_DateTime", Localizer.FormatDate(local), Localizer.FormatTime(local));
     }
 }

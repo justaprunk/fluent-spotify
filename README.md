@@ -1,5 +1,3 @@
-| Artist genres | The field is deprecated and often comes back empty, so the top genres in «Мои итоги» may be unavailable |
-| 📊 **My summary** («Мои итоги») | Top tracks, artists and genres over about a year, 6 months or 4 weeks, like Spotify Wrapped. You can save the summary as a private playlist |
 <p align="center">
   <img src="Assets/AppIcon.png" alt="Fluent Spotify" width="96" height="96" />
 </p>
@@ -43,11 +41,13 @@ If music is already playing on another device, such as your phone or another PC,
 | 🔐 **PKCE sign-in** | Sign in through the browser with no client secret. Tokens are stored encrypted |
 | 🏠 **Home** | Your playlists and Liked Songs |
 | 📃 **Playlists and Liked Songs** | Tracks load page by page, so the UI never blocks |
+| 📊 **My summary** | Top tracks, artists and genres over about a year, 6 months or 4 weeks, like Spotify Wrapped. You can save the summary as a private playlist |
 | 🔎 **Search** | Tracks, artists and albums |
 | ▶️ **Player bar** | Seek, volume, shuffle and repeat |
 | ⌨️ **Windows media keys** | System Media Transport Controls (SMTC) support |
 | 🎨 **Appearance** | Window backdrop (Mica, Mica Alt, Acrylic, Acrylic Thin or none) and theme (system, light, dark) |
 | 🐚 **WSHM shell theme** | When enabled, the backdrop and theme come from `~/.config/wshm/theme.json` and follow the shell |
+| 🌐 **15 interface languages** | English, French, German, Dutch, Japanese, Korean, Polish, Portuguese (Brazil), Russian, Simplified and Traditional Chinese, Spanish (Latin America and Spain), Turkish and Ukrainian. The app follows the Windows display language by default; you can choose another one in Settings |
 | 📐 **Responsive layout** | Works in narrow windows too. Minimum size is 520×560 |
 
 > [!NOTE]
@@ -106,6 +106,7 @@ Since February 2026, Spotify restricts the Web API for apps in Development Mode:
 | Playlist contents | Only available for playlists you own or collaborate on. For other playlists Spotify returns **403**, and the app shows a clear message |
 | Search | At most **10** results per request |
 | Users | Only accounts listed under **User Management** can sign in |
+| Artist genres | The field is deprecated and often comes back empty, so the top genres in My summary may be unavailable |
 
 The client also works with apps that have Extended Quota access, since it supports the older API field names as well.
 
@@ -138,9 +139,6 @@ The script publishes a self-contained build and writes `installer\Output\FluentS
 > [!TIP]
 > With `--self-contained false`, the target machine needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
 
-> [!NOTE]
-> The app's UI is currently in Russian only.
-
 ## 🗂️ Project structure
 
 <details>
@@ -148,15 +146,18 @@ The script publishes a self-contained build and writes `installer\Output\FluentS
 
 ```text
 fluent-spotify/
-├── App.xaml(.cs)              # Entry point, DI container, Client ID selection
+├── App.xaml(.cs)              # Entry point, DI container, Client ID and language selection
 ├── MainWindow.xaml(.cs)       # Window: sign-in screen, NavigationView, player bar
 ├── Assets/                    # App icon (.ico / .png)
+├── Controls/                  # SettingsCard: Windows 11 style settings row
 ├── Core/
 │   ├── Api/                   # SpotifyApiClient: SpotifyAPI.Web wrapper plus direct Web API calls
 │   ├── Auth/                  # PkceAuthService (PKCE sign-in), TokenStorage (DPAPI)
 │   ├── Playback/              # Background Spotify client launch, playback transfer, SMTC bridge
 │   ├── Settings/              # AppSettings / SettingsService (settings.json)
 │   └── WindowMinSize.cs       # Minimum window size (WinAppSDK 1.6 has no built-in API for it)
+├── Localization/              # Localizer (JSON strings, CLDR plural rules) and the {l:Tr} XAML extension
+├── Strings/                   # Translations: <language code>.json, embedded into the app
 ├── ViewModels/                # MVVM with CommunityToolkit.Mvvm: Main, PlayerBar, Playlist, Search, Settings
 ├── Views/                     # Pages: Home, PlaylistDetail, Search, Settings, PlayerBar
 └── Shared/                    # Shared WSHM shell types, vendored so the repo builds standalone
@@ -172,7 +173,7 @@ fluent-spotify/
 
 | Data | Path |
 |---|---|
-| Settings (Client ID, backdrop, theme, background client) | `%LOCALAPPDATA%\FluentSpotify\settings.json` |
+| Settings (Client ID, language, backdrop, theme, background client) | `%LOCALAPPDATA%\FluentSpotify\settings.json` |
 | Access tokens, encrypted with **DPAPI** for the current Windows user | `%LOCALAPPDATA%\FluentSpotify\tokens.dat` |
 | Logs (once a log passes 1 MB, it is renamed to `.old`) | `%LOCALAPPDATA%\wshm\logs\fluent-spotify.log` |
 

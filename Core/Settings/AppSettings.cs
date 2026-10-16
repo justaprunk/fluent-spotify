@@ -28,6 +28,9 @@ public sealed partial class AppSettings
     /// <summary>Тема: System, Light, Dark.</summary>
     public string Theme { get; set; } = "System";
 
+    /// <summary>Язык интерфейса (код из Localizer.Languages); пусто — как в Windows.</summary>
+    public string? Language { get; set; }
+
     /// <summary>Брать материал и тему из оболочки WSHM (~/.config/wshm/theme.json).</summary>
     public bool UseShellTheme { get; set; }
 

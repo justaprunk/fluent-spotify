@@ -2,6 +2,7 @@
     x:Class="FluentSpotify.Views.PlayerBarView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:FluentSpotify.Localization"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:FluentSpotify.ViewModels"
@@ -100,14 +101,14 @@
                                       IsChecked="{x:Bind ViewModel.IsShuffle, Mode=OneWay}"
                                       Width="32" Height="32" Padding="0" CornerRadius="16"
                                       Background="Transparent" BorderThickness="0"
-                                      ToolTipService.ToolTip="Перемешать">
+                                      ToolTipService.ToolTip="{l:Tr Key=Player_Shuffle}" AutomationProperties.Name="{l:Tr Key=Player_Shuffle}">
                             <FontIcon Glyph="&#xE8B1;" FontSize="14" />
                         </ToggleButton>
 
                         <Button Command="{x:Bind ViewModel.PreviousTrackCommand}"
                                 Width="32" Height="32" Padding="0" CornerRadius="16"
                                 Background="Transparent" BorderThickness="0"
-                                ToolTipService.ToolTip="Предыдущий трек">
+                                ToolTipService.ToolTip="{l:Tr Key=Player_Previous}" AutomationProperties.Name="{l:Tr Key=Player_Previous}">
                             <FontIcon Glyph="&#xE892;" FontSize="14" />
                         </Button>
 
@@ -115,7 +116,7 @@
                                 Width="38" Height="38" Padding="0"
                                 CornerRadius="19"
                                 Style="{ThemeResource AccentButtonStyle}"
-                                ToolTipService.ToolTip="Воспроизвести / пауза">
+                                ToolTipService.ToolTip="{l:Tr Key=Player_PlayPause}" AutomationProperties.Name="{l:Tr Key=Player_PlayPause}">
                             <FontIcon Glyph="{x:Bind ViewModel.IsPlaying, Mode=OneWay, Converter={StaticResource PlayPauseIconConverter}}"
                                       FontSize="16" />
                         </Button>
@@ -123,7 +124,7 @@
                         <Button Command="{x:Bind ViewModel.NextTrackCommand}"
                                 Width="32" Height="32" Padding="0" CornerRadius="16"
                                 Background="Transparent" BorderThickness="0"
-                                ToolTipService.ToolTip="Следующий трек">
+                                ToolTipService.ToolTip="{l:Tr Key=Player_Next}" AutomationProperties.Name="{l:Tr Key=Player_Next}">
                             <FontIcon Glyph="&#xE893;" FontSize="14" />
                         </Button>
 
@@ -132,7 +133,7 @@
                                       IsChecked="{x:Bind ViewModel.IsRepeat, Mode=OneWay}"
                                       Width="32" Height="32" Padding="0" CornerRadius="16"
                                       Background="Transparent" BorderThickness="0"
-                                      ToolTipService.ToolTip="Повтор">
+                                      ToolTipService.ToolTip="{l:Tr Key=Player_Repeat}" AutomationProperties.Name="{l:Tr Key=Player_Repeat}">
                             <FontIcon Glyph="&#xE8EE;" FontSize="14" />
                         </ToggleButton>
                     </StackPanel>
@@ -157,7 +158,7 @@
                                 Value="{x:Bind ViewModel.CurrentPositionMs, Mode=TwoWay}"
                                 VerticalAlignment="Center"
                                 Margin="0,-4,0,-8"
-                                AutomationProperties.Name="Позиция воспроизведения" />
+                                AutomationProperties.Name="{l:Tr Key=Player_Position}" />
 
                         <TextBlock x:Name="DurationText" Grid.Column="2" Text="{x:Bind ViewModel.DurationText, Mode=OneWay}"
                                    FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -175,7 +176,7 @@
                             Maximum="100"
                             Value="{x:Bind ViewModel.Volume, Mode=TwoWay}"
                             VerticalAlignment="Center"
-                            AutomationProperties.Name="Громкость" />
+                            AutomationProperties.Name="{l:Tr Key=Player_Volume}" />
                 </StackPanel>
             </Grid>
         </Border>

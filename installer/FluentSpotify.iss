@@ -55,10 +55,24 @@ RestartApplications=no
 
 OutputDir=Output
 OutputBaseFilename=FluentSpotify-{#AppVersion}-Setup-x64
+; Диалог выбора языка — только если язык Windows не нашёлся среди переводов
+ShowLanguageDialog=auto
 
 [Languages]
-Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+; Язык мастера выбирается по языку Windows. Для китайского в Inno Setup нет
+; встроенного перевода — для него используется английский.
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+Name: "german"; MessagesFile: "compiler:Languages\German.isl"
+Name: "dutch"; MessagesFile: "compiler:Languages\Dutch.isl"
+Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
+Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
+Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
+Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
+Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
+Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

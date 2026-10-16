@@ -2,6 +2,7 @@
     x:Class="FluentSpotify.Views.HomeView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:FluentSpotify.Localization"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:spotify="using:SpotifyAPI.Web"
@@ -10,7 +11,7 @@
     <ScrollViewer Background="Transparent" Padding="24,16,24,24">
         <StackPanel Spacing="24">
             <!-- Заголовок секции -->
-            <TextBlock Text="Главная" FontSize="26" FontWeight="Bold" />
+            <TextBlock Text="{l:Tr Key=Nav_Home}" FontSize="26" FontWeight="Bold" />
 
             <!-- Быстрый доступ: карточка «Любимые треки» в стиле плиток Windows 11 -->
             <Button HorizontalAlignment="Left" MinWidth="360" MaxWidth="480"
@@ -18,7 +19,7 @@
                     Padding="8,8,16,8" CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    AutomationProperties.Name="Любимые треки"
+                    AutomationProperties.Name="{l:Tr Key=Nav_Liked}"
                     Click="OnLikedSongsClick">
                 <Grid ColumnSpacing="14">
                     <Grid.ColumnDefinitions>
@@ -40,7 +41,7 @@
                     </Border>
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Text="Любимые треки" FontWeight="SemiBold" FontSize="14" />
+                        <TextBlock Text="{l:Tr Key=Nav_Liked}" FontWeight="SemiBold" FontSize="14" />
                         <TextBlock Text="{x:Bind ViewModel.LikedTracksText, Mode=OneWay}" FontSize="12"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </StackPanel>
@@ -52,7 +53,7 @@
 
             <!-- Сетка медиатеки плейлистов -->
             <StackPanel Spacing="12">
-                <TextBlock Text="Ваши плейлисты" FontSize="18" FontWeight="SemiBold" />
+                <TextBlock Text="{l:Tr Key=Home_YourPlaylists}" FontSize="18" FontWeight="SemiBold" />
 
                 <GridView ItemsSource="{x:Bind ViewModel.Playlists, Mode=OneWay}"
                           SelectionMode="None"
