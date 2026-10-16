@@ -339,12 +339,19 @@ public class SpotifyApiClient : IDisposable
     /// <summary>Контекст "Любимые треки" для воспроизведения: spotify:user:{id}:collection</summary>
     public async Task<string?> GetLikedSongsContextUriAsync()
     {
+        string? userId = await GetCurrentUserIdAsync();
+        return userId == null ? null : $"spotify:user:{userId}:collection";
+    }
+
+    /// <summary>Id текущего пользователя Spotify (запрашивается один раз за сессию).</summary>
+    public async Task<string?> GetCurrentUserIdAsync()
+    {
         if (_currentUserId == null)
         {
             var me = await GetRawAsync("me");
             _currentUserId = (string?)me?["id"];
         }
-        return _currentUserId == null ? null : $"spotify:user:{_currentUserId}:collection";
+        return _currentUserId;
     }
 
     private async IAsyncEnumerable<IReadOnlyList<FullTrack>> EnumerateTrackPagesAsync(

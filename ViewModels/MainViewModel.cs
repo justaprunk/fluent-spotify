@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FluentSpotify.Core.Api;
 using FluentSpotify.Core.Auth;
+using FluentSpotify.Core.Library;
 using FluentSpotify.Core.Playback;
 using FluentSpotify.Core.Settings;
 using Microsoft.UI.Dispatching;
@@ -50,6 +51,12 @@ public partial class MainViewModel : ObservableObject
 
     public ObservableCollection<FullPlaylist> Playlists { get; } = new();
 
+    /// <summary>Разделы сетки плейлистов на главной: без папки и по одному на каждую папку.</summary>
+    public ObservableCollection<PlaylistSection> HomeSections { get; } = new();
+
+    /// <summary>Локальные папки плейлистов (Web API Spotify папок не знает).</summary>
+    public PlaylistFolderService Folders { get; }
+
     public PlayerBarViewModel PlayerBar { get; }
 
     private readonly PkceAuthService _authService;
@@ -57,8 +64,10 @@ public partial class MainViewModel : ObservableObject
     private readonly BackgroundPlaybackService _background;
 
     public MainViewModel(SpotifyApiClient apiClient, PkceAuthService authService, SettingsService settings,
-        BackgroundPlaybackService background, PlayerBarViewModel playerBar)
+        BackgroundPlaybackService background, PlayerBarViewModel playerBar, PlaylistFolderService folders)
     {
+        Folders = folders;
+        Folders.Changed += RebuildHomeSections;
         _apiClient = apiClient;
         _authService = authService;
         _settings = settings;
@@ -66,6 +75,14 @@ public partial class MainViewModel : ObservableObject
         PlayerBar = playerBar;
         _isClientIdMissing = !authService.IsConfigured;
         _dispatcher = DispatcherQueue.GetForCurrentThread();
+
+        _groupHomeByFolders = settings.Current.GroupHomeByFolders;
+        settings.Changed += s =>
+        {
+            if (s.GroupHomeByFolders == _groupHomeByFolders) return;
+            _groupHomeByFolders = s.GroupHomeByFolders;
+            RunOnUi(RebuildHomeSections);
+        };
 
         // Событие приходит из фонового потока опроса
         _apiClient.SessionExpired += () => RunOnUi(() =>
@@ -182,6 +199,7 @@ public partial class MainViewModel : ObservableObject
     {
         IsAuthenticated = false;
         Playlists.Clear();
+        Folders.Reset();
         LikedTracksCount = null;
     }
 
@@ -203,11 +221,24 @@ public partial class MainViewModel : ObservableObject
     {
         var userPlaylists = await _apiClient.GetUserPlaylistsAsync();
 
+        string? userId = null;
+        try
+        {
+            userId = await _apiClient.GetCurrentUserIdAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write("MainViewModel", ex);
+        }
+
         Playlists.Clear();
         foreach (var playlist in userPlaylists)
         {
             Playlists.Add(playlist);
         }
+
+        // Сверка папок с медиатекой; Changed перестроит боковую панель и главную
+        Folders.Reconcile(userId, userPlaylists.Select(p => p.Id).OfType<string>().ToList());
 
         try
         {
@@ -219,4 +250,42 @@ public partial class MainViewModel : ObservableObject
             AppLog.Write("MainViewModel", ex);
         }
     }
+
+    public FullPlaylist? FindPlaylist(string id) => Playlists.FirstOrDefault(p => p.Id == id);
+
+    private bool _groupHomeByFolders;
+
+    private void RebuildHomeSections()
+    {
+        HomeSections.Clear();
+        if (Playlists.Count == 0) return;
+
+        var title = Localizer.Get("Home_YourPlaylists");
+        if (!_groupHomeByFolders || !Folders.HasFolders)
+        {
+            HomeSections.Add(new PlaylistSection(title, string.Empty, Playlists.ToList()));
+            return;
+        }
+
+        var root = Resolve(Folders.Root.Playlists);
+        if (root.Count > 0)
+        {
+            HomeSections.Add(new PlaylistSection(title, string.Empty, root));
+        }
+        foreach (var (folder, _) in Folders.Flatten())
+        {
+            var playlists = Resolve(folder.Playlists);
+            if (playlists.Count == 0) continue;
+            HomeSections.Add(new PlaylistSection(Folders.PathOf(folder), Localizer.Plural("Playlists", playlists.Count), playlists));
+        }
+    }
+
+    private List<FullPlaylist> Resolve(IEnumerable<string> ids)
+    {
+        var byId = Playlists.Where(p => p.Id != null).ToDictionary(p => p.Id!);
+        return ids.Select(id => byId.GetValueOrDefault(id)).OfType<FullPlaylist>().ToList();
+    }
 }
+
+/// <summary>Раздел сетки на главной: заголовок (путь папки) и её плейлисты.</summary>
+public sealed record PlaylistSection(string Title, string Subtitle, IReadOnlyList<FullPlaylist> Playlists);

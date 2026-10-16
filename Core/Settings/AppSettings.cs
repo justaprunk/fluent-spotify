@@ -41,6 +41,9 @@ public sealed partial class AppSettings
     /// </summary>
     public bool LaunchClientInBackground { get; set; } = true;
 
+    /// <summary>На главной показывать плейлисты по папкам — отдельный раздел на каждую папку.</summary>
+    public bool GroupHomeByFolders { get; set; } = true;
+
     /// <summary>Предлагать пре-релизы (бета-версии) из GitHub Releases.</summary>
     public bool IncludePrereleases { get; set; } = true;
 

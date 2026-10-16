@@ -1,11 +1,13 @@
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using FluentSpotify.Core.Library;
 using FluentSpotify.Core.Playback;
 using FluentSpotify.Core.Settings;
 using FluentSpotify.Shared.Diagnostics;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 namespace FluentSpotify.ViewModels;
 
@@ -71,6 +73,21 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _launchClientInBackground;
 
+    [ObservableProperty]
+    private bool _groupHomeByFolders;
+
+    /// <summary>Итог экспорта или импорта папок.</summary>
+    [ObservableProperty]
+    private bool _isFoldersStatusOpen;
+
+    [ObservableProperty]
+    private string _foldersStatus = string.Empty;
+
+    [ObservableProperty]
+    private InfoBarSeverity _foldersStatusSeverity;
+
+    public PlaylistFolderService Folders => _main.Folders;
+
     /// <summary>Какой официальный клиент найден на этом ПК.</summary>
     public string ClientStatusText { get; } = SpotifyClientLauncher.DetectInstall().Kind switch
     {
@@ -110,6 +127,7 @@ public partial class SettingsViewModel : ObservableObject
         SelectedLanguage = LanguageOptions.FirstOrDefault(o => o.Value == (current.Language ?? string.Empty)) ?? LanguageOptions[0];
         UseShellTheme = current.UseShellTheme;
         LaunchClientInBackground = current.LaunchClientInBackground;
+        GroupHomeByFolders = current.GroupHomeByFolders;
         UpdateRestartState();
         _initializing = false;
     }
@@ -156,6 +174,52 @@ public partial class SettingsViewModel : ObservableObject
     {
         if (_initializing) return;
         _settings.Update(s => s.LaunchClientInBackground = value);
+    }
+
+    partial void OnGroupHomeByFoldersChanged(bool value)
+    {
+        if (_initializing) return;
+        _settings.Update(s => s.GroupHomeByFolders = value);
+    }
+
+    public void ExportFolders(string path)
+    {
+        try
+        {
+            Folders.Export(path);
+            ShowFoldersStatus(InfoBarSeverity.Success, Localizer.Format("Folders_Exported", path));
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write("Settings", ex);
+            ShowFoldersStatus(InfoBarSeverity.Error, Localizer.Format("UpdErr_SaveFile", ex.Message));
+        }
+    }
+
+    public void ImportFolders(string path)
+    {
+        try
+        {
+            int count = Folders.Import(path);
+            ShowFoldersStatus(InfoBarSeverity.Success, Localizer.Format("Folders_Imported", Localizer.Plural("Folders", count)));
+        }
+        catch (InvalidDataException ex)
+        {
+            AppLog.Write("Settings", ex);
+            ShowFoldersStatus(InfoBarSeverity.Error, Localizer.Get("Folders_InvalidFile"));
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write("Settings", ex);
+            ShowFoldersStatus(InfoBarSeverity.Error, Localizer.Format("Folders_ImportFailed", ex.Message));
+        }
+    }
+
+    private void ShowFoldersStatus(InfoBarSeverity severity, string message)
+    {
+        FoldersStatusSeverity = severity;
+        FoldersStatus = message;
+        IsFoldersStatusOpen = true;
     }
 
     [RelayCommand]

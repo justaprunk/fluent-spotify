@@ -115,7 +115,9 @@
                         IsSettingsVisible="False"
                         OpenPaneLength="260"
                         SelectionChanged="NavView_SelectionChanged"
-                        DisplayModeChanged="NavView_DisplayModeChanged">
+                        DisplayModeChanged="NavView_DisplayModeChanged"
+                        Expanding="NavView_Expanding"
+                        Collapsed="NavView_Collapsed">
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="{l:Tr Key=Nav_Home}" Tag="Home">
                     <NavigationViewItem.Icon>
@@ -137,7 +139,8 @@
                         <FontIcon Glyph="&#xE9D2;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItemHeader Content="{l:Tr Key=Nav_Library}" />
+                <!-- Папки и плейлисты добавляются из кода (MainWindow.Library.cs) -->
+                <NavigationViewItemHeader x:Name="LibraryHeader" Content="{l:Tr Key=Nav_Library}" />
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>

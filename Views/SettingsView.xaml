@@ -85,6 +85,29 @@
                      Title="{l:Tr Key=Settings_ClientMissingTitle}"
                      Message="{l:Tr Key=Settings_ClientMissingMessage}" />
 
+            <!-- Медиатека: локальные папки плейлистов -->
+            <TextBlock Text="{l:Tr Key=Settings_SectionLibrary}" Style="{StaticResource SettingsSectionHeaderStyle}" />
+
+            <controls:SettingsCard Glyph="&#xF0E2;"
+                                   Header="{l:Tr Key=Settings_GroupHome}"
+                                   Description="{l:Tr Key=Settings_GroupHomeDesc}">
+                <ToggleSwitch OnContent="" OffContent="" MinWidth="0"
+                              IsOn="{x:Bind ViewModel.GroupHomeByFolders, Mode=TwoWay}" />
+            </controls:SettingsCard>
+
+            <controls:SettingsCard Glyph="&#xE8B7;"
+                                   Header="{l:Tr Key=Settings_Folders}"
+                                   Description="{l:Tr Key=Settings_FoldersDesc}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="{l:Tr Key=Settings_Export}" MinWidth="100" Click="OnExportFoldersClick" />
+                    <Button Content="{l:Tr Key=Settings_Import}" MinWidth="100" Click="OnImportFoldersClick" />
+                </StackPanel>
+            </controls:SettingsCard>
+
+            <InfoBar IsOpen="{x:Bind ViewModel.IsFoldersStatusOpen, Mode=TwoWay}"
+                     Severity="{x:Bind ViewModel.FoldersStatusSeverity, Mode=OneWay}"
+                     Message="{x:Bind ViewModel.FoldersStatus, Mode=OneWay}" />
+
             <!-- Аккаунт -->
             <TextBlock Text="{l:Tr Key=Settings_SectionAccount}" Style="{StaticResource SettingsSectionHeaderStyle}" />
 

@@ -6,7 +6,34 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:spotify="using:SpotifyAPI.Web"
+    xmlns:vm="using:FluentSpotify.ViewModels"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <!-- Карточка плейлиста в сетке медиатеки -->
+        <DataTemplate x:Key="PlaylistCardTemplate" x:DataType="spotify:FullPlaylist">
+            <Border Width="160" Height="210" Padding="12" Margin="0,0,12,12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1" CornerRadius="8">
+                <StackPanel Spacing="8">
+                    <Border Width="136" Height="136" CornerRadius="6">
+                        <Grid Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+                            <FontIcon Glyph="&#xEC4F;" FontSize="32"
+                                      Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Image Source="{x:Bind Images, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="UniformToFill" />
+                        </Grid>
+                    </Border>
+                    <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="13"
+                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+                    <TextBlock Text="{x:Bind Owner.DisplayName}" FontSize="11"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </Page.Resources>
 
     <ScrollViewer Background="Transparent" Padding="24,16,24,24">
         <StackPanel Spacing="24">
@@ -51,46 +78,40 @@
                 </Grid>
             </Button>
 
-            <!-- Сетка медиатеки плейлистов -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="{l:Tr Key=Home_YourPlaylists}" FontSize="18" FontWeight="SemiBold" />
+            <!-- Сетка медиатеки плейлистов: один раздел или по разделу на каждую папку -->
+            <ItemsControl ItemsSource="{x:Bind ViewModel.HomeSections, Mode=OneWay}" IsTabStop="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="12" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PlaylistSection">
+                        <StackPanel Spacing="12">
+                            <!-- Путь папки и число плейлистов; длинный путь переносится на узком окне -->
+                            <TextBlock TextWrapping="Wrap">
+                                <Run Text="{x:Bind Title}" FontSize="18" FontWeight="SemiBold" />
+                                <Run Text="{x:Bind Subtitle}" FontSize="12"
+                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </TextBlock>
 
-                <GridView ItemsSource="{x:Bind ViewModel.Playlists, Mode=OneWay}"
-                          SelectionMode="None"
-                          IsItemClickEnabled="True"
-                          ItemClick="OnPlaylistItemClick">
-                    <GridView.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <!-- Без ограничения числа колонок: сетка заполняет всю ширину широкого окна -->
-                            <ItemsWrapGrid Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </GridView.ItemsPanel>
-                    <GridView.ItemTemplate>
-                        <DataTemplate x:DataType="spotify:FullPlaylist">
-                            <Border Width="160" Height="210" Padding="12" Margin="0,0,12,12"
-                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                    BorderThickness="1" CornerRadius="8">
-                                <StackPanel Spacing="8">
-                                    <Border Width="136" Height="136" CornerRadius="6">
-                                        <Grid Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
-                                            <FontIcon Glyph="&#xEC4F;" FontSize="32" 
-                                                      Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            <Image Source="{x:Bind Images, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="UniformToFill" />
-                                        </Grid>
-                                    </Border>
-                                    <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="13" 
-                                               TextTrimming="CharacterEllipsis" MaxLines="1" />
-                                    <TextBlock Text="{x:Bind Owner.DisplayName}" FontSize="11" 
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
-                                               TextTrimming="CharacterEllipsis" MaxLines="1" />
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </GridView.ItemTemplate>
-                </GridView>
-            </StackPanel>
+                            <GridView ItemsSource="{x:Bind Playlists}"
+                                      SelectionMode="None"
+                                      IsItemClickEnabled="True"
+                                      ItemClick="OnPlaylistItemClick"
+                                      ItemTemplate="{StaticResource PlaylistCardTemplate}">
+                                <GridView.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <!-- Без ограничения числа колонок: сетка заполняет всю ширину широкого окна -->
+                                        <ItemsWrapGrid Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </GridView.ItemsPanel>
+                            </GridView>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </StackPanel>
+
     </ScrollViewer>
 </Page>

@@ -1,4 +1,3 @@
-using System.Collections.Specialized;
 using System.ComponentModel;
 using FluentSpotify.Core;
 using FluentSpotify.Core.Api;
@@ -27,7 +26,6 @@ public sealed partial class MainWindow : FluentWindow
 
     private readonly SettingsService _settings;
     private readonly AppWindow _appWindow;
-    private readonly List<NavigationViewItem> _playlistItems = new();
     private readonly WindowMinSize _minSize;
 
     public MainWindow(MainViewModel viewModel, SettingsService settings, UpdateViewModel updates)
@@ -65,7 +63,8 @@ public sealed partial class MainWindow : FluentWindow
         _settings.Changed += s => DispatcherQueue.TryEnqueue(() => ApplyAppearance(s));
         RootGrid.ActualThemeChanged += (s, e) => UpdateTitleBarColors();
 
-        ViewModel.Playlists.CollectionChanged += OnPlaylistsChanged;
+        ViewModel.Folders.Changed += RebuildLibrary;
+        SetupLibraryHeader();
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         Updates.DetailsRequested += OnUpdateDetailsRequested;
 
@@ -150,30 +149,10 @@ public sealed partial class MainWindow : FluentWindow
         }
     }
 
-    private void OnPlaylistsChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        foreach (var item in _playlistItems)
-        {
-            NavView.MenuItems.Remove(item);
-        }
-        _playlistItems.Clear();
-
-        foreach (var playlist in ViewModel.Playlists)
-        {
-            var item = new NavigationViewItem
-            {
-                Content = playlist.Name,
-                Tag = playlist,
-                Icon = new FontIcon { Glyph = "" }
-            };
-            _playlistItems.Add(item);
-            NavView.MenuItems.Add(item);
-        }
-    }
-
     private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.SelectedItem is not NavigationViewItem navItem) return;
+        if (args.SelectedItem is not NavigationViewItem navItem || _restoringSelection) return;
+        _selectedPlaylistId = (navItem.Tag as FullPlaylist)?.Id;
 
         switch (navItem.Tag)
         {
