@@ -36,7 +36,7 @@
 
 ## 🎧 Возможности
 
-| | |
+| Возможность | Описание |
 |---|---|
 | 🔐 **Вход через PKCE** | Авторизация в браузере без client secret, токены хранятся в зашифрованном виде |
 | 🏠 **Главная** | Ваши плейлисты и «Любимые треки» |
@@ -101,24 +101,19 @@
 
 ## 🛠️ Сборка и запуск
 
-```bash
+```powershell
+# 1. Клонировать репозиторий
 git clone https://github.com/justaprunk/fluent-spotify.git
 cd fluent-spotify
-```
 
-**Сборка:**
-
-```bash
+# 2. Собрать (Release, x64)
 dotnet build -c Release -p:Platform=x64
-```
 
-Готовый `fluent-spotify.exe` будет в `bin\x64\Release\net8.0-windows10.0.22621.0\`.
-
-**Публикация** в папку для распространения:
-
-```bash
+# 3. Опубликовать в папку для распространения (необязательно)
 dotnet publish -c Release -r win-x64 --self-contained false -p:Platform=x64
 ```
+
+После сборки `fluent-spotify.exe` лежит в `bin\x64\Release\net8.0-windows10.0.22621.0\`.
 
 > [!TIP]
 > С `--self-contained false` на целевой машине должна быть установлена [среда выполнения .NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).

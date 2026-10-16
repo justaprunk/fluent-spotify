@@ -36,7 +36,7 @@ If music is already playing on another device, such as your phone or another PC,
 
 ## 🎧 Features
 
-| | |
+| Feature | Description |
 |---|---|
 | 🔐 **PKCE sign-in** | Sign in through the browser with no client secret. Tokens are stored encrypted |
 | 🏠 **Home** | Your playlists and Liked Songs |
@@ -101,24 +101,19 @@ The client also works with apps that have Extended Quota access, since it suppor
 
 ## 🛠️ Build and run
 
-```bash
+```powershell
+# 1. Clone the repository
 git clone https://github.com/justaprunk/fluent-spotify.git
 cd fluent-spotify
-```
 
-**Build:**
-
-```bash
+# 2. Build (Release, x64)
 dotnet build -c Release -p:Platform=x64
-```
 
-The resulting `fluent-spotify.exe` is in `bin\x64\Release\net8.0-windows10.0.22621.0\`.
-
-**Publish** to a folder for distribution:
-
-```bash
+# 3. Publish to a folder for distribution (optional)
 dotnet publish -c Release -r win-x64 --self-contained false -p:Platform=x64
 ```
+
+After building, `fluent-spotify.exe` is in `bin\x64\Release\net8.0-windows10.0.22621.0\`.
 
 > [!TIP]
 > With `--self-contained false`, the target machine needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
