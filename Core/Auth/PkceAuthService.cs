@@ -19,7 +19,8 @@ public class PkceAuthService
     private const string PlaceholderClientId = "YOUR_SPOTIFY_CLIENT_ID";
     private static readonly TimeSpan LoginTimeout = TimeSpan.FromMinutes(5);
 
-    // Скоупы для управления плеером, библиотекой и плейлистами
+    // Скоупы для управления плеером, библиотекой и плейлистами.
+    // user-top-read — «Мои итоги», playlist-modify-private — сохранение итогов в приватный плейлист.
     private static readonly string[] RequiredScopes =
     [
         Scopes.UserReadPlaybackState,
@@ -28,7 +29,8 @@ public class PkceAuthService
         Scopes.PlaylistReadPrivate,
         Scopes.PlaylistReadCollaborative,
         Scopes.UserLibraryRead,
-        Scopes.UserTopRead
+        Scopes.UserTopRead,
+        Scopes.PlaylistModifyPrivate
     ];
 
     private string _clientId;
@@ -166,7 +168,8 @@ public class PkceAuthService
                 ? newRt
                 : refreshToken;
 
-        var tokens = new AuthTokens(newAccessToken, returnedRefreshToken, DateTime.UtcNow.AddSeconds(expiresIn));
+        var tokens = new AuthTokens(newAccessToken, returnedRefreshToken, DateTime.UtcNow.AddSeconds(expiresIn),
+            ReadScope(root));
         await TokenStorage.SaveTokensAsync(tokens);
         return tokens;
     }
@@ -187,11 +190,16 @@ public class PkceAuthService
         var tokens = new AuthTokens(
             root.RootElement.GetProperty("access_token").GetString()!,
             root.RootElement.GetProperty("refresh_token").GetString()!,
-            DateTime.UtcNow.AddSeconds(root.RootElement.GetProperty("expires_in").GetInt32()));
+            DateTime.UtcNow.AddSeconds(root.RootElement.GetProperty("expires_in").GetInt32()),
+            ReadScope(root));
 
         await TokenStorage.SaveTokensAsync(tokens);
         return tokens;
     }
+
+    /// <summary>Скоупы, которые пользователь реально выдал (могут отличаться от запрошенных).</summary>
+    private static string? ReadScope(JsonDocument root) =>
+        root.RootElement.TryGetProperty("scope", out var scope) ? scope.GetString() : null;
 
     private async Task<JsonDocument> PostTokenRequestAsync(Dictionary<string, string> parameters)
     {

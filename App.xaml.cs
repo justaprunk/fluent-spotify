@@ -64,6 +64,7 @@ public partial class App : Application
         services.AddTransient<SearchViewModel>();
         services.AddTransient<PlaylistViewModel>();
         services.AddTransient<SettingsViewModel>();
+        services.AddTransient<WrappedViewModel>();
 
         // 3. Main Window
         services.AddSingleton<MainWindow>();

@@ -21,6 +21,17 @@ public sealed record PlaylistDetails(
     int TotalItems,
     bool ContentsAvailable);
 
+/// <summary>
+/// 401 или 403 «Insufficient client scope»: у токена нет нужных разрешений —
+/// пользователю нужно войти заново, чтобы выдать новые скоупы.
+/// </summary>
+public sealed class SpotifyScopeException : HttpRequestException
+{
+    public SpotifyScopeException(string message, HttpStatusCode statusCode) : base(message, null, statusCode)
+    {
+    }
+}
+
 public class SpotifyApiClient : IDisposable
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(1500);
@@ -361,7 +372,10 @@ public class SpotifyApiClient : IDisposable
         }
     }
 
-    private async Task<JObject?> GetRawAsync(string url, CancellationToken ct = default)
+    private Task<JObject?> GetRawAsync(string url, CancellationToken ct = default) =>
+        SendRawAsync(HttpMethod.Get, url, null, ct);
+
+    private async Task<JObject?> SendRawAsync(HttpMethod method, string url, JObject? body, CancellationToken ct = default)
     {
         await EnsureValidTokenAsync();
         string? token = _currentTokens?.AccessToken;
@@ -371,11 +385,15 @@ public class SpotifyApiClient : IDisposable
 
         for (int attempt = 0; ; attempt++)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            using var request = new HttpRequestMessage(method, uri);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            if (body != null)
+            {
+                request.Content = new StringContent(body.ToString(Formatting.None), System.Text.Encoding.UTF8, "application/json");
+            }
 
             using var response = await RawHttp.SendAsync(request, ct);
-            string body = await response.Content.ReadAsStringAsync(ct);
+            string responseBody = await response.Content.ReadAsStringAsync(ct);
 
             // Rate limit: ждём, сколько попросил сервер, и пробуем ещё раз
             if ((int)response.StatusCode == 429 && attempt < 3)
@@ -387,12 +405,105 @@ public class SpotifyApiClient : IDisposable
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new HttpRequestException($"Spotify API {(int)response.StatusCode} ({uri.AbsolutePath}): {body}",
-                    null, response.StatusCode);
+                string message = $"Spotify API {(int)response.StatusCode} ({uri.AbsolutePath}): {responseBody}";
+
+                // Токен выдан без нужного скоупа (например, сохранён до появления новой функции)
+                if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                    (response.StatusCode == HttpStatusCode.Forbidden &&
+                     responseBody.Contains("scope", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new SpotifyScopeException(message, response.StatusCode);
+                }
+
+                throw new HttpRequestException(message, null, response.StatusCode);
             }
 
-            return JObject.Parse(body);
+            // 201/200 без тела (или пустой снимок) — возвращаем пустой объект
+            return string.IsNullOrWhiteSpace(responseBody) ? new JObject() : JObject.Parse(responseBody);
         }
+    }
+
+    #endregion
+
+    #region Top items & playlist creation («Мои итоги»)
+
+    // GET /me/top/{type} в Development Mode остался (скоуп user-top-read).
+    // Создание плейлиста: POST /users/{id}/playlists удалён в феврале 2026 → POST /me/playlists;
+    // добавление треков: /playlists/{id}/tracks → /playlists/{id}/items.
+
+    public const int MaxTopItemsLimit = 50;
+    private const int MaxItemsPerAddRequest = 100;
+
+    /// <summary>Выдан ли текущему токену скоуп; null — неизвестно (токен сохранён старой версией).</summary>
+    public bool? HasScope(string scope) => _currentTokens?.HasScope(scope);
+
+    /// <param name="timeRange">long_term (~год), medium_term (~6 месяцев) или short_term (~4 недели).</param>
+    public async Task<IReadOnlyList<FullTrack>> GetTopTracksAsync(string timeRange, int limit = MaxTopItemsLimit,
+        CancellationToken ct = default)
+    {
+        var json = await GetRawAsync(TopUrl("tracks", timeRange, limit), ct);
+        return ReadItems<FullTrack>(json, t => !string.IsNullOrEmpty(t.Uri));
+    }
+
+    /// <param name="timeRange">long_term (~год), medium_term (~6 месяцев) или short_term (~4 недели).</param>
+    public async Task<IReadOnlyList<FullArtist>> GetTopArtistsAsync(string timeRange, int limit = MaxTopItemsLimit,
+        CancellationToken ct = default)
+    {
+        var json = await GetRawAsync(TopUrl("artists", timeRange, limit), ct);
+        return ReadItems<FullArtist>(json, a => !string.IsNullOrEmpty(a.Id));
+    }
+
+    /// <summary>Создать плейлист в медиатеке текущего пользователя и заполнить его треками.</summary>
+    /// <returns>Id созданного плейлиста.</returns>
+    public async Task<string> CreatePlaylistWithTracksAsync(string name, string? description, bool isPublic,
+        IReadOnlyList<string> trackUris, CancellationToken ct = default)
+    {
+        var created = await SendRawAsync(HttpMethod.Post, "me/playlists", new JObject
+        {
+            ["name"] = name,
+            ["public"] = isPublic,
+            ["description"] = description ?? string.Empty
+        }, ct);
+
+        string playlistId = (string?)created?["id"]
+            ?? throw new InvalidOperationException("Spotify не вернул id созданного плейлиста.");
+
+        for (int i = 0; i < trackUris.Count; i += MaxItemsPerAddRequest)
+        {
+            var chunk = trackUris.Skip(i).Take(MaxItemsPerAddRequest);
+            await SendRawAsync(HttpMethod.Post, $"playlists/{Uri.EscapeDataString(playlistId)}/items",
+                new JObject { ["uris"] = new JArray(chunk) }, ct);
+        }
+
+        return playlistId;
+    }
+
+    /// <summary>Воспроизвести список треков, начиная с указанного (без контекста плейлиста).</summary>
+    public Task PlayTracksAsync(IReadOnlyList<string> trackUris, string? startUri = null)
+    {
+        if (trackUris.Count == 0) return Task.CompletedTask;
+
+        return ExecutePlayerAsync(client => client.Player.ResumePlayback(new PlayerResumePlaybackRequest
+        {
+            Uris = trackUris.ToList(),
+            OffsetParam = startUri == null ? null : new PlayerResumePlaybackRequest.Offset { Uri = startUri }
+        }));
+    }
+
+    private static string TopUrl(string type, string timeRange, int limit) =>
+        $"me/top/{type}?time_range={Uri.EscapeDataString(timeRange)}&limit={Math.Clamp(limit, 1, MaxTopItemsLimit)}";
+
+    private static List<T> ReadItems<T>(JObject? page, Func<T, bool> isValid) where T : class
+    {
+        var result = new List<T>();
+        foreach (var entry in page?["items"] as JArray ?? new JArray())
+        {
+            if (entry is JObject obj && obj.ToObject<T>(SpotifyJson) is { } item && isValid(item))
+            {
+                result.Add(item);
+            }
+        }
+        return result;
     }
 
     #endregion

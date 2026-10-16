@@ -137,6 +137,16 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Повторный вход без выхода из аккаунта: нужен, когда приложению понадобились новые скоупы.
+    /// В отличие от LoginCommand, при ошибке/отмене текущая сессия остаётся рабочей.
+    /// </summary>
+    public async Task ReauthenticateAsync()
+    {
+        await _apiClient.AuthenticateAsync();
+        await RefreshPlaylistsAsync();
+    }
+
     [RelayCommand]
     private void SaveClientId()
     {

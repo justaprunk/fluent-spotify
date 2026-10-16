@@ -186,6 +186,9 @@ public sealed partial class MainWindow : FluentWindow
             case "Liked":
                 ContentFrame.Navigate(typeof(PlaylistDetailView), SpotifyApiClient.LikedSongsId);
                 break;
+            case "Wrapped":
+                ContentFrame.Navigate(typeof(WrappedView));
+                break;
             case FullPlaylist { Id: { Length: > 0 } playlistId }:
                 // Переход на детальную страницу выбранного плейлиста
                 ContentFrame.Navigate(typeof(PlaylistDetailView), playlistId);

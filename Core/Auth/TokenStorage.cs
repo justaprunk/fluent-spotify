@@ -7,7 +7,13 @@ using System.Threading.Tasks;
 
 namespace FluentSpotify.Core.Auth;
 
-public record AuthTokens(string AccessToken, string RefreshToken, DateTime ExpiresAt);
+/// <param name="Scope">Выданные скоупы через пробел; null — токен сохранён старой версией приложения.</param>
+public record AuthTokens(string AccessToken, string RefreshToken, DateTime ExpiresAt, string? Scope = null)
+{
+    /// <summary>true/false — скоуп выдан или нет; null — неизвестно (токен из старой версии).</summary>
+    public bool? HasScope(string scope) =>
+        Scope?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains(scope);
+}
 
 public static class TokenStorage
 {
