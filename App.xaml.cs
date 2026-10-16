@@ -1,0 +1,137 @@
+using FluentSpotify.Core.Api;
+using FluentSpotify.Core.Auth;
+using FluentSpotify.Core.Playback;
+using FluentSpotify.Core.Settings;
+using FluentSpotify.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Wshm.Common.Diagnostics;
+
+namespace FluentSpotify;
+
+public partial class App : Application
+{
+    private Window? _mainWindow;
+
+    public static IServiceProvider Services { get; private set; } = null!;
+
+    // Client ID из Spotify Developer Dashboard: задайте здесь или в переменной окружения
+    // FLUENT_SPOTIFY_CLIENT_ID. Redirect URI в Dashboard: http://127.0.0.1:5000/callback/
+    private const string DefaultSpotifyClientId = "YOUR_SPOTIFY_CLIENT_ID";
+
+    public App()
+    {
+        InitializeComponent();
+
+        UnhandledException += (sender, e) =>
+        {
+            // Не роняем приложение из-за временных сбоев API, но обязательно логируем
+            AppLog.Write("FluentSpotify", e.Exception);
+            e.Handled = true;
+        };
+
+        ConfigureServices();
+    }
+
+    private static void ConfigureServices()
+    {
+        var services = new ServiceCollection();
+        var settings = new SettingsService();
+
+        // Приоритет: переменная окружения → сохранённые настройки (ввод на экране входа) → константа
+        string clientId =
+            Environment.GetEnvironmentVariable("FLUENT_SPOTIFY_CLIENT_ID") is { Length: > 0 } fromEnv ? fromEnv
+            : settings.Current.ClientId is { Length: > 0 } fromSettings ? fromSettings
+            : DefaultSpotifyClientId;
+
+        // 1. Core Services
+        services.AddSingleton(settings);
+        services.AddSingleton(new PkceAuthService(clientId));
+        services.AddSingleton<SpotifyApiClient>();
+        services.AddSingleton<SmtcBridge>();
+        services.AddSingleton<SpotifyClientLauncher>();
+        services.AddSingleton<BackgroundPlaybackService>();
+
+        // 2. ViewModels
+        services.AddSingleton<PlayerBarViewModel>();
+        services.AddSingleton<MainViewModel>();
+        services.AddTransient<SearchViewModel>();
+        services.AddTransient<PlaylistViewModel>();
+        services.AddTransient<SettingsViewModel>();
+
+        // 3. Main Window
+        services.AddSingleton<MainWindow>();
+
+        Services = services.BuildServiceProvider();
+    }
+
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        // Окно и view-модели создаются в UI-потоке (им нужен DispatcherQueue)
+        _mainWindow = Services.GetRequiredService<MainWindow>();
+        _mainWindow.Activate();
+
+        // Мост системных медиаклавиш Windows
+        try
+        {
+            _ = Services.GetRequiredService<SmtcBridge>();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write("FluentSpotify", ex);
+        }
+    }
+}
+
+#region XAML Value Converters
+
+public sealed class PlayPauseIconConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        // Unicode Segoe Fluent Icons: E768 = Play, E769 = Pause
+        return value is true ? "" : "";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language) =>
+        throw new NotSupportedException();
+}
+
+public sealed class InverseBoolToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        return value is true ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>
+/// URL (string) или список изображений Spotify → ImageSource. Пустые значения дают null.
+/// </summary>
+public sealed class UrlToImageSourceConverter : IValueConverter
+{
+    public object? Convert(object value, Type targetType, object parameter, string language)
+    {
+        string? url = value switch
+        {
+            string s => s,
+            IEnumerable<SpotifyAPI.Web.Image> images => images.FirstOrDefault()?.Url,
+            _ => null
+        };
+
+        return !string.IsNullOrWhiteSpace(url) && Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            ? new BitmapImage(uri)
+            : null;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language) =>
+        throw new NotSupportedException();
+}
+
+#endregion

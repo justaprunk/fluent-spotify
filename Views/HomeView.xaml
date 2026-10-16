@@ -1,0 +1,94 @@
+<Page
+    x:Class="FluentSpotify.Views.HomeView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:spotify="using:SpotifyAPI.Web"
+    mc:Ignorable="d">
+
+    <ScrollViewer Background="Transparent" Padding="24,16,24,24">
+        <StackPanel Spacing="24">
+            <!-- Заголовок секции -->
+            <TextBlock Text="Главная" FontSize="26" FontWeight="Bold" />
+
+            <!-- Быстрый доступ: карточка «Любимые треки» в стиле плиток Windows 11 -->
+            <Button HorizontalAlignment="Left" MinWidth="360" MaxWidth="480"
+                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                    Padding="8,8,16,8" CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    AutomationProperties.Name="Любимые треки"
+                    Click="OnLikedSongsClick">
+                <Grid ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Обложка коллекции: квадратная плитка с мягким градиентом акцентного цвета -->
+                    <Border Width="48" Height="48" CornerRadius="6">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="{ThemeResource SystemAccentColorDark1}" Offset="0" />
+                                <GradientStop Color="{ThemeResource SystemAccentColorLight2}" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <FontIcon Glyph="&#xEB52;" FontSize="20" Foreground="White"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="Любимые треки" FontWeight="SemiBold" FontSize="14" />
+                        <TextBlock Text="{x:Bind ViewModel.LikedTracksText, Mode=OneWay}" FontSize="12"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+
+                    <FontIcon Grid.Column="2" Glyph="&#xE76C;" FontSize="12" VerticalAlignment="Center"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </Grid>
+            </Button>
+
+            <!-- Сетка медиатеки плейлистов -->
+            <StackPanel Spacing="12">
+                <TextBlock Text="Ваши плейлисты" FontSize="18" FontWeight="SemiBold" />
+
+                <GridView ItemsSource="{x:Bind ViewModel.Playlists, Mode=OneWay}"
+                          SelectionMode="None"
+                          IsItemClickEnabled="True"
+                          ItemClick="OnPlaylistItemClick">
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="6" />
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                    <GridView.ItemTemplate>
+                        <DataTemplate x:DataType="spotify:FullPlaylist">
+                            <Border Width="160" Height="210" Padding="12" Margin="0,0,12,12"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8">
+                                <StackPanel Spacing="8">
+                                    <Border Width="136" Height="136" CornerRadius="6">
+                                        <Grid Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+                                            <FontIcon Glyph="&#xEC4F;" FontSize="32" 
+                                                      Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <Image Source="{x:Bind Images, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="UniformToFill" />
+                                        </Grid>
+                                    </Border>
+                                    <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="13" 
+                                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                    <TextBlock Text="{x:Bind Owner.DisplayName}" FontSize="11" 
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

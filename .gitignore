@@ -1,0 +1,23 @@
+# Build output
+bin/
+obj/
+publish/
+AppPackages/
+BundleArtifacts/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.rsuser
+
+# Packaging / signing
+*.pfx
+*.appx
+*.msix
+*.msixbundle
+
+# Local secrets
+.env
+*.local.json

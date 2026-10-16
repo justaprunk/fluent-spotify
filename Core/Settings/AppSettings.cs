@@ -1,0 +1,99 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using Wshm.Common.Diagnostics;
+
+namespace FluentSpotify.Core.Settings;
+
+/// <summary>
+/// Пользовательские настройки: %LOCALAPPDATA%\FluentSpotify\settings.json
+/// </summary>
+public sealed partial class AppSettings
+{
+    private static readonly string SettingsPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "FluentSpotify",
+        "settings.json");
+
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+
+    /// <summary>
+    /// Client ID приложения из Spotify Developer Dashboard. Это не секрет:
+    /// при PKCE client secret не используется.
+    /// </summary>
+    public string? ClientId { get; set; }
+
+    /// <summary>Материал окна: None, Mica, MicaAlt, Acrylic, AcrylicThin.</summary>
+    public string Backdrop { get; set; } = "Mica";
+
+    /// <summary>Тема: System, Light, Dark.</summary>
+    public string Theme { get; set; } = "System";
+
+    /// <summary>Брать материал и тему из оболочки WSHM (~/.config/wshm/theme.json).</summary>
+    public bool UseShellTheme { get; set; }
+
+    /// <summary>
+    /// Автоматически запускать официальный клиент Spotify скрытым — он служит устройством
+    /// воспроизведения (Spotify Connect). В этом режиме системные медиаэлементы Windows
+    /// показывает сам клиент, наш SmtcBridge выключен, чтобы не было двух карточек.
+    /// </summary>
+    public bool LaunchClientInBackground { get; set; } = true;
+
+    public static AppSettings Load()
+    {
+        try
+        {
+            if (File.Exists(SettingsPath))
+            {
+                return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(SettingsPath)) ?? new AppSettings();
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write("AppSettings", ex);
+        }
+        return new AppSettings();
+    }
+
+    public void Save()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+        File.WriteAllText(SettingsPath, JsonSerializer.Serialize(this, JsonOptions));
+    }
+
+    /// <summary>Client ID Spotify — 32 шестнадцатеричных символа.</summary>
+    public static bool IsValidClientId(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && ClientIdRegex().IsMatch(value.Trim());
+
+    [GeneratedRegex("^[0-9a-fA-F]{32}$")]
+    private static partial Regex ClientIdRegex();
+}
+
+/// <summary>
+/// Единая точка доступа к настройкам: хранит текущие значения, сохраняет на диск
+/// и уведомляет подписчиков (окно применяет материал и тему на лету).
+/// </summary>
+public sealed class SettingsService
+{
+    public AppSettings Current { get; }
+
+    public event Action<AppSettings>? Changed;
+
+    public SettingsService()
+    {
+        Current = AppSettings.Load();
+    }
+
+    public void Update(Action<AppSettings> change)
+    {
+        change(Current);
+        try
+        {
+            Current.Save();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write("SettingsService", ex);
+        }
+        Changed?.Invoke(Current);
+    }
+}
