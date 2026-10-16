@@ -38,6 +38,15 @@ public sealed partial class AppSettings
     /// </summary>
     public bool LaunchClientInBackground { get; set; } = true;
 
+    /// <summary>Предлагать пре-релизы (бета-версии) из GitHub Releases.</summary>
+    public bool IncludePrereleases { get; set; } = true;
+
+    /// <summary>Версия, которую пользователь попросил пропустить (без префикса v).</summary>
+    public string? SkippedVersion { get; set; }
+
+    /// <summary>Время последней успешной проверки обновлений.</summary>
+    public DateTimeOffset? LastUpdateCheck { get; set; }
+
     public static AppSettings Load()
     {
         try
@@ -83,7 +92,11 @@ public sealed class SettingsService
         Current = AppSettings.Load();
     }
 
-    public void Update(Action<AppSettings> change)
+    /// <param name="notify">
+    /// false — только сохранить, без события Changed (служебные значения вроде времени
+    /// проверки обновлений, из-за которых не нужно заново применять оформление окна).
+    /// </param>
+    public void Update(Action<AppSettings> change, bool notify = true)
     {
         change(Current);
         try
@@ -94,6 +107,9 @@ public sealed class SettingsService
         {
             AppLog.Write("SettingsService", ex);
         }
-        Changed?.Invoke(Current);
+        if (notify)
+        {
+            Changed?.Invoke(Current);
+        }
     }
 }

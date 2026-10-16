@@ -72,6 +72,8 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: deskto
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; Обновление из приложения: тихая установка с /RELAUNCH=1 снова запускает приложение
+Filename: "{app}\{#AppExeName}"; Flags: nowait skipifnotsilent; Check: RelaunchRequested
 
 [InstallDelete]
 ; Убираем файлы прошлой версии, чтобы не оставались устаревшие DLL
@@ -79,3 +81,10 @@ Type: filesandordirs; Name: "{app}\*"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
+
+[Code]
+// /RELAUNCH=1 передаёт приложение при обновлении (Core/Updates/UpdateService.cs)
+function RelaunchRequested: Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
+end;

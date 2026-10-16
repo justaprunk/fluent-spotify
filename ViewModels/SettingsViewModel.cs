@@ -75,10 +75,14 @@ public partial class SettingsViewModel : ObservableObject
 
     public bool HasSupportNote => SupportNote.Length > 0;
 
-    public SettingsViewModel(SettingsService settings, MainViewModel main)
+    /// <summary>Раздел «Обновления»: общее состояние с InfoBar главного окна.</summary>
+    public UpdateViewModel Updates { get; }
+
+    public SettingsViewModel(SettingsService settings, MainViewModel main, UpdateViewModel updates)
     {
         _settings = settings;
         _main = main;
+        Updates = updates;
 
         var current = settings.Current;
         SelectedBackdrop = BackdropOptions.FirstOrDefault(o => o.Value == current.Backdrop) ?? BackdropOptions[0];

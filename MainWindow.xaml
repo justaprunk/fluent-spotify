@@ -13,6 +13,8 @@
         <Grid.RowDefinitions>
             <!-- TitleBar Drag Area -->
             <RowDefinition Height="Auto" />
+            <!-- Уведомление о новой версии -->
+            <RowDefinition Height="Auto" />
             <!-- Основной контент: Навигация / Авторизация -->
             <RowDefinition Height="*" />
             <!-- Фиксированный нижний плеер-бар -->
@@ -20,7 +22,7 @@
         </Grid.RowDefinitions>
 
         <!-- Сплошной фон, когда материал окна выключен или не поддерживается системой -->
-        <Border x:Name="SolidBackground" Grid.RowSpan="3"
+        <Border x:Name="SolidBackground" Grid.RowSpan="4"
                 Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
                 Visibility="Collapsed" />
 
@@ -32,8 +34,30 @@
             </StackPanel>
         </Grid>
 
+        <!-- Доступна новая версия: обновление одной кнопкой, во время загрузки — прогресс -->
+        <InfoBar Grid.Row="1" Margin="12,0,12,8"
+                 Severity="{x:Bind Updates.InfoBarSeverity, Mode=OneWay}"
+                 Title="{x:Bind Updates.AvailableTitle, Mode=OneWay}"
+                 Message="{x:Bind Updates.InfoBarMessage, Mode=OneWay}"
+                 IsOpen="{x:Bind Updates.IsInfoBarOpen, Mode=TwoWay}"
+                 IsClosable="{x:Bind Updates.CanInstall, Mode=OneWay}">
+            <InfoBar.Content>
+                <StackPanel Spacing="8" Margin="0,0,0,12">
+                    <ProgressBar Value="{x:Bind Updates.DownloadProgress, Mode=OneWay}" Maximum="100"
+                                 Visibility="{x:Bind Updates.IsInstalling, Mode=OneWay}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8"
+                                Visibility="{x:Bind Updates.CanInstall, Mode=OneWay}">
+                        <Button Content="Обновить" Style="{ThemeResource AccentButtonStyle}"
+                                Command="{x:Bind Updates.InstallCommand}" />
+                        <Button Content="Подробнее" Command="{x:Bind Updates.ShowDetailsCommand}" />
+                        <HyperlinkButton Content="Пропустить эту версию" Command="{x:Bind Updates.SkipCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </InfoBar.Content>
+        </InfoBar>
+
         <!-- Экран 1: Пользователь не авторизован -->
-        <Grid Grid.Row="1"
+        <Grid Grid.Row="2"
               Visibility="{x:Bind ViewModel.IsNotAuthenticated, Mode=OneWay}"
               HorizontalAlignment="Center" VerticalAlignment="Center">
             <StackPanel Spacing="16" MaxWidth="360" HorizontalAlignment="Center">
@@ -80,7 +104,7 @@
 
         <!-- Экран 2: Авторизованная рабочая среда.
              Плейлисты добавляются в MenuItems из кода: MenuItems и MenuItemsSource нельзя использовать вместе. -->
-        <NavigationView Grid.Row="1"
+        <NavigationView Grid.Row="2"
                         x:Name="NavView"
                         Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay}"
                         PaneDisplayMode="Auto"
@@ -129,7 +153,7 @@
         </NavigationView>
 
         <!-- Нижний бар воспроизведения -->
-        <views:PlayerBarView Grid.Row="2"
+        <views:PlayerBarView Grid.Row="3"
                              DataContext="{x:Bind ViewModel.PlayerBar}"
                              Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay}" />
     </Grid>

@@ -22,15 +22,19 @@ public sealed partial class MainWindow : FluentWindow
 {
     public MainViewModel ViewModel { get; }
 
+    /// <summary>InfoBar о новой версии.</summary>
+    public UpdateViewModel Updates { get; }
+
     private readonly SettingsService _settings;
     private readonly AppWindow _appWindow;
     private readonly List<NavigationViewItem> _playlistItems = new();
     private readonly WindowMinSize _minSize;
 
-    public MainWindow(MainViewModel viewModel, SettingsService settings)
+    public MainWindow(MainViewModel viewModel, SettingsService settings, UpdateViewModel updates)
     {
         // ViewModel должен быть задан до InitializeComponent — на него ссылаются x:Bind
         ViewModel = viewModel;
+        Updates = updates;
         _settings = settings;
         InitializeComponent();
 
@@ -60,6 +64,7 @@ public sealed partial class MainWindow : FluentWindow
 
         ViewModel.Playlists.CollectionChanged += OnPlaylistsChanged;
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        Updates.DetailsRequested += OnUpdateDetailsRequested;
 
         // У Window в WinUI 3 нет события Loaded — используем корневой элемент
         RootGrid.Loaded += OnRootLoaded;
@@ -193,6 +198,22 @@ public sealed partial class MainWindow : FluentWindow
         // В режиме Minimal кнопка-гамбургер висит поверх содержимого — освобождаем под неё место
         bool minimal = args.DisplayMode == NavigationViewDisplayMode.Minimal;
         ContentFrame.Margin = new Thickness(0, minimal ? 40 : 0, 12, 0);
+    }
+
+    /// <summary>«Подробнее» в InfoBar: описание версии в настройках, а до входа — страница релиза.</summary>
+    private void OnUpdateDetailsRequested()
+    {
+        var settingsItem = NavView.FooterMenuItems.OfType<NavigationViewItem>()
+            .FirstOrDefault(i => (i.Tag as string) == "Settings");
+
+        if (ViewModel.IsAuthenticated && settingsItem != null)
+        {
+            NavView.SelectedItem = settingsItem;
+        }
+        else
+        {
+            Updates.OpenReleasePageCommand.Execute(null);
+        }
     }
 
     private void LogoutItem_Tapped(object sender, TappedRoutedEventArgs e)

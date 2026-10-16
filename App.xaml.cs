@@ -2,6 +2,7 @@ using FluentSpotify.Core.Api;
 using FluentSpotify.Core.Auth;
 using FluentSpotify.Core.Playback;
 using FluentSpotify.Core.Settings;
+using FluentSpotify.Core.Updates;
 using FluentSpotify.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -54,10 +55,12 @@ public partial class App : Application
         services.AddSingleton<SmtcBridge>();
         services.AddSingleton<SpotifyClientLauncher>();
         services.AddSingleton<BackgroundPlaybackService>();
+        services.AddSingleton<UpdateService>();
 
         // 2. ViewModels
         services.AddSingleton<PlayerBarViewModel>();
         services.AddSingleton<MainViewModel>();
+        services.AddSingleton<UpdateViewModel>();
         services.AddTransient<SearchViewModel>();
         services.AddTransient<PlaylistViewModel>();
         services.AddTransient<SettingsViewModel>();
@@ -83,6 +86,9 @@ public partial class App : Application
         {
             AppLog.Write("FluentSpotify", ex);
         }
+
+        // Проверка обновлений: отложенно после запуска и затем раз в 6 часов
+        Services.GetRequiredService<UpdateService>().Start();
     }
 }
 
