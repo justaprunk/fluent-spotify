@@ -30,7 +30,7 @@
         <Grid x:Name="AppTitleBar" Grid.Row="0" Height="42" Padding="16,0">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
                 <Image Source="ms-appx:///Assets/AppIcon.png" Width="16" Height="16" />
-                <TextBlock Text="Spotify" FontWeight="SemiBold" FontSize="12" />
+                <TextBlock Text="Fluent Spotify" FontWeight="SemiBold" FontSize="12" />
             </StackPanel>
         </Grid>
 

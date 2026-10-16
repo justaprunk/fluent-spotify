@@ -98,8 +98,8 @@ public sealed class PlayPauseIconConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        // Unicode Segoe Fluent Icons: E768 = Play, E769 = Pause
-        return value is true ? "" : "";
+        // Segoe Fluent Icons, заполненные варианты: F5B0 = PlaySolid, F8AE = PauseSolid
+        return value is true ? "" : "";
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>

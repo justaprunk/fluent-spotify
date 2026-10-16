@@ -98,14 +98,14 @@
                         <ToggleButton x:Name="ShuffleButton"
                                       Command="{x:Bind ViewModel.ToggleShuffleCommand}"
                                       IsChecked="{x:Bind ViewModel.IsShuffle, Mode=OneWay}"
-                                      Width="32" Height="32" Padding="0"
+                                      Width="32" Height="32" Padding="0" CornerRadius="16"
                                       Background="Transparent" BorderThickness="0"
                                       ToolTipService.ToolTip="Перемешать">
                             <FontIcon Glyph="&#xE8B1;" FontSize="14" />
                         </ToggleButton>
 
                         <Button Command="{x:Bind ViewModel.PreviousTrackCommand}"
-                                Width="32" Height="32" Padding="0"
+                                Width="32" Height="32" Padding="0" CornerRadius="16"
                                 Background="Transparent" BorderThickness="0"
                                 ToolTipService.ToolTip="Предыдущий трек">
                             <FontIcon Glyph="&#xE892;" FontSize="14" />
@@ -121,7 +121,7 @@
                         </Button>
 
                         <Button Command="{x:Bind ViewModel.NextTrackCommand}"
-                                Width="32" Height="32" Padding="0"
+                                Width="32" Height="32" Padding="0" CornerRadius="16"
                                 Background="Transparent" BorderThickness="0"
                                 ToolTipService.ToolTip="Следующий трек">
                             <FontIcon Glyph="&#xE893;" FontSize="14" />
@@ -130,7 +130,7 @@
                         <ToggleButton x:Name="RepeatButton"
                                       Command="{x:Bind ViewModel.ToggleRepeatCommand}"
                                       IsChecked="{x:Bind ViewModel.IsRepeat, Mode=OneWay}"
-                                      Width="32" Height="32" Padding="0"
+                                      Width="32" Height="32" Padding="0" CornerRadius="16"
                                       Background="Transparent" BorderThickness="0"
                                       ToolTipService.ToolTip="Повтор">
                             <FontIcon Glyph="&#xE8EE;" FontSize="14" />

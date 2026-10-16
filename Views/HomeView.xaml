@@ -60,7 +60,8 @@
                           ItemClick="OnPlaylistItemClick">
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="6" />
+                            <!-- Без ограничения числа колонок: сетка заполняет всю ширину широкого окна -->
+                            <ItemsWrapGrid Orientation="Horizontal" />
                         </ItemsPanelTemplate>
                     </GridView.ItemsPanel>
                     <GridView.ItemTemplate>
