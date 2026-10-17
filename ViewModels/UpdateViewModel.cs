@@ -207,7 +207,8 @@ public partial class UpdateViewModel : ObservableObject
     [RelayCommand]
     private void OpenReleasePage()
     {
-        string url = Available?.HtmlUrl is { Length: > 0 } u ? u : "https://github.com/justaprunk/fluent-spotify/releases";
+        // Через оболочку открываем только страницу релиза на github.com, никогда не файл или чужой адрес
+        string url = Available?.HtmlUrl is { } u && UpdateService.IsTrustedReleasePage(u) ? u : UpdateService.ReleasesPageUrl;
         try
         {
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });

@@ -193,6 +193,18 @@ public sealed class UpdateService : IDisposable
         var sha = assets.FirstOrDefault(a => string.Equals(Name(a), setupName + ".sha256", StringComparison.OrdinalIgnoreCase));
         if (sha.ValueKind != JsonValueKind.Object) return null;
 
+        // Загружаем и открываем только адреса GitHub по HTTPS — ответ API не должен
+        // увести загрузку установщика или кнопку «Подробнее» на чужой адрес или локальный файл
+        string setupUrl = setup.GetProperty("browser_download_url").GetString() ?? string.Empty;
+        string shaUrl = sha.GetProperty("browser_download_url").GetString() ?? string.Empty;
+        string htmlUrl = release.GetProperty("html_url").GetString() ?? string.Empty;
+        if (!IsTrustedDownloadUrl(setupUrl) || !IsTrustedDownloadUrl(shaUrl))
+        {
+            AppLog.Write(Component, $"В релизе {tag} ссылки на файлы ведут не на GitHub — пропускаем");
+            return null;
+        }
+        if (!IsTrustedReleasePage(htmlUrl)) htmlUrl = ReleasesPageUrl;
+
         string title = release.TryGetProperty("name", out var n) && n.GetString() is { Length: > 0 } name ? name : tag;
         string notes = release.TryGetProperty("body", out var b) ? b.GetString() ?? string.Empty : string.Empty;
         DateTimeOffset? published = release.TryGetProperty("published_at", out var p) && p.ValueKind == JsonValueKind.String
@@ -204,14 +216,31 @@ public sealed class UpdateService : IDisposable
             tag,
             title,
             notes.Trim(),
-            release.GetProperty("html_url").GetString() ?? string.Empty,
+            htmlUrl,
             published,
             preRelease,
             setupName,
-            setup.GetProperty("browser_download_url").GetString() ?? string.Empty,
+            setupUrl,
             setup.GetProperty("size").GetInt64(),
-            sha.GetProperty("browser_download_url").GetString() ?? string.Empty);
+            shaUrl);
     }
+
+    /// <summary>Страница релизов репозитория — запасной адрес для кнопки «Подробнее».</summary>
+    public const string ReleasesPageUrl = "https://github.com/justaprunk/fluent-spotify/releases";
+
+    /// <summary>Файл релиза этого репозитория: https://github.com/justaprunk/fluent-spotify/releases/download/…</summary>
+    private static bool IsTrustedDownloadUrl(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri)
+        && uri.Scheme == Uri.UriSchemeHttps
+        && uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
+        && uri.AbsolutePath.StartsWith("/justaprunk/fluent-spotify/releases/download/", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Страница релиза этого репозитория на github.com.</summary>
+    public static bool IsTrustedReleasePage(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri)
+        && uri.Scheme == Uri.UriSchemeHttps
+        && uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
+        && uri.AbsolutePath.StartsWith("/justaprunk/fluent-spotify/releases", StringComparison.OrdinalIgnoreCase);
 
     private static void EnsureApiSuccess(HttpResponseMessage response)
     {
@@ -264,6 +293,8 @@ public sealed class UpdateService : IDisposable
             LastError = ex is OperationCanceledException ? Localizer.Get("UpdErr_Cancelled") : DescribeError(ex);
             AppLog.Write(Component, $"Обновление не удалось: {LastError}");
             if (ex is not (UpdateException or OperationCanceledException)) AppLog.Write(Component, ex);
+            _lockedInstaller?.Dispose();
+            _lockedInstaller = null;
             IsInstalling = false;
             RaiseStateChanged();
             return false;
@@ -308,22 +339,46 @@ public sealed class UpdateService : IDisposable
             }
         }
 
-        string actualHash;
-        await using (var file = File.OpenRead(partial))
-        {
-            actualHash = Convert.ToHexString(await SHA256.HashDataAsync(file, cancellationToken));
-        }
-
-        if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
-        {
-            File.Delete(partial);
-            AppLog.Write(Component, $"SHA-256 не совпадает: ожидалось {expectedHash}, получено {actualHash}");
-            throw new UpdateException(Localizer.Get("UpdErr_HashMismatch"));
-        }
-
         File.Move(partial, target, overwrite: true);
+
+        // Проверяем и запускаем через один и тот же открытый дескриптор, запрещающий запись и удаление:
+        // иначе между проверкой SHA-256 и запуском файл можно было бы подменить
+        var locked = new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.Read);
+        try
+        {
+            string actualHash = Convert.ToHexString(await SHA256.HashDataAsync(locked, cancellationToken));
+            if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
+            {
+                AppLog.Write(Component, $"SHA-256 не совпадает: ожидалось {expectedHash}, получено {actualHash}");
+                throw new UpdateException(Localizer.Get("UpdErr_HashMismatch"));
+            }
+        }
+        catch
+        {
+            locked.Dispose();
+            TryDelete(target);
+            throw;
+        }
+
+        // Дескриптор держим до выхода из приложения (оно закрывается сразу после запуска установщика)
+        _lockedInstaller?.Dispose();
+        _lockedInstaller = locked;
         AppLog.Write(Component, $"Установщик загружен и проверен: {target}");
         return target;
+    }
+
+    private static FileStream? _lockedInstaller;
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write(Component, $"Не удалось удалить {path}: {ex.Message}");
+        }
     }
 
     private async Task<string> DownloadExpectedHashAsync(UpdateInfo update, CancellationToken cancellationToken)
