@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using FluentSpotify.Core.Settings;
 using FluentSpotify.Shared.Diagnostics;
@@ -20,12 +21,14 @@ public sealed record UpdateInfo(
     string SetupName,
     string SetupUrl,
     long SetupSize,
-    string Sha256Url);
+    string Sha256Url,
+    string SignatureUrl);
 
 /// <summary>
 /// Обновления через GitHub Releases: проверка при запуске и раз в 6 часов, загрузка
-/// установщика (*-Setup-x64.exe) в %LOCALAPPDATA%\FluentSpotify\updates, проверка SHA-256
-/// по файлу .sha256 из того же релиза и тихий запуск установщика Inno Setup.
+/// установщика (*-Setup-x64.exe) в %LOCALAPPDATA%\FluentSpotify\updates, проверка подписи
+/// файла .sha256 ключом владельца (.sha256.sig, см. UpdateSignature), проверка SHA-256
+/// установщика и тихий запуск установщика Inno Setup. Релизы без подписи не предлагаются.
 /// Методы можно вызывать из любого потока; StateChanged тоже приходит из любого потока.
 /// </summary>
 public sealed class UpdateService : IDisposable
@@ -41,7 +44,11 @@ public sealed class UpdateService : IDisposable
     private const string ReleasesUrl = GitHubReleasesUrl;
 #endif
 
+    private const string SetupPrefix = "FluentSpotify-";
     private const string SetupSuffix = "-Setup-x64.exe";
+
+    /// <summary>Предел для .sha256 и .sig: это одна строка, большой ответ — явно не тот файл.</summary>
+    private const int MaxSmallAssetSize = 4096;
 
     private static readonly TimeSpan StartupDelay = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(6);
@@ -172,7 +179,7 @@ public sealed class UpdateService : IDisposable
             var info = ToUpdateInfo(release, tag, version, preRelease);
             if (info == null)
             {
-                AppLog.Write(Component, $"В релизе {tag} нет *{SetupSuffix} или его .sha256 — пропускаем");
+                AppLog.Write(Component, $"В релизе {tag} нет *{SetupSuffix}, его .sha256 или подписи .sha256.sig — пропускаем");
                 continue;
             }
             best = info;
@@ -193,12 +200,17 @@ public sealed class UpdateService : IDisposable
         var sha = assets.FirstOrDefault(a => string.Equals(Name(a), setupName + ".sha256", StringComparison.OrdinalIgnoreCase));
         if (sha.ValueKind != JsonValueKind.Object) return null;
 
+        // Релизы до 1.3.3 не подписаны — их больше не предлагаем
+        var sig = assets.FirstOrDefault(a => string.Equals(Name(a), setupName + ".sha256.sig", StringComparison.OrdinalIgnoreCase));
+        if (sig.ValueKind != JsonValueKind.Object) return null;
+
         // Загружаем и открываем только адреса GitHub по HTTPS — ответ API не должен
         // увести загрузку установщика или кнопку «Подробнее» на чужой адрес или локальный файл
         string setupUrl = setup.GetProperty("browser_download_url").GetString() ?? string.Empty;
         string shaUrl = sha.GetProperty("browser_download_url").GetString() ?? string.Empty;
+        string sigUrl = sig.GetProperty("browser_download_url").GetString() ?? string.Empty;
         string htmlUrl = release.GetProperty("html_url").GetString() ?? string.Empty;
-        if (!IsTrustedDownloadUrl(setupUrl) || !IsTrustedDownloadUrl(shaUrl))
+        if (!IsTrustedDownloadUrl(setupUrl) || !IsTrustedDownloadUrl(shaUrl) || !IsTrustedDownloadUrl(sigUrl))
         {
             AppLog.Write(Component, $"В релизе {tag} ссылки на файлы ведут не на GitHub — пропускаем");
             return null;
@@ -222,7 +234,8 @@ public sealed class UpdateService : IDisposable
             setupName,
             setupUrl,
             setup.GetProperty("size").GetInt64(),
-            shaUrl);
+            shaUrl,
+            sigUrl);
     }
 
     /// <summary>Страница релизов репозитория — запасной адрес для кнопки «Подробнее».</summary>
@@ -231,9 +244,21 @@ public sealed class UpdateService : IDisposable
     /// <summary>Файл релиза этого репозитория: https://github.com/justaprunk/fluent-spotify/releases/download/…</summary>
     private static bool IsTrustedDownloadUrl(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var uri)
-        && uri.Scheme == Uri.UriSchemeHttps
-        && uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
-        && uri.AbsolutePath.StartsWith("/justaprunk/fluent-spotify/releases/download/", StringComparison.OrdinalIgnoreCase);
+        && ((uri.Scheme == Uri.UriSchemeHttps
+             && uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
+             && uri.AbsolutePath.StartsWith("/justaprunk/fluent-spotify/releases/download/", StringComparison.OrdinalIgnoreCase))
+            || IsDebugFeedUrl(uri));
+
+#if DEBUG
+    // Подменный список релизов может отдавать файлы со своего адреса. Подпись при этом
+    // проверяется тем же встроенным ключом, так что тестовый релиз нужно подписать им же
+    private static bool IsDebugFeedUrl(Uri uri) =>
+        ReleasesUrl != GitHubReleasesUrl
+        && Uri.TryCreate(ReleasesUrl, UriKind.Absolute, out var feed)
+        && Uri.Compare(uri, feed, UriComponents.SchemeAndServer, UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase) == 0;
+#else
+    private static bool IsDebugFeedUrl(Uri uri) => false;
+#endif
 
     /// <summary>Страница релиза этого репозитория на github.com.</summary>
     public static bool IsTrustedReleasePage(string url) =>
@@ -302,8 +327,9 @@ public sealed class UpdateService : IDisposable
     }
 
     /// <summary>
-    /// Скачивает установщик, сверяет SHA-256 и возвращает путь к нему.
-    /// При несовпадении контрольной суммы файл удаляется и выбрасывается исключение.
+    /// Проверяет подпись .sha256, скачивает установщик, сверяет SHA-256 и возвращает путь к нему.
+    /// При неверной подписи или несовпадении контрольной суммы выбрасывается исключение
+    /// (скачанный файл удаляется).
     /// </summary>
     private async Task<string> DownloadAsync(UpdateInfo update, IProgress<double>? progress, CancellationToken cancellationToken)
     {
@@ -386,14 +412,54 @@ public sealed class UpdateService : IDisposable
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(ApiTimeout);
 
+        // Подписан сам файл .sha256 — байт в байт, как его записал build-installer.ps1
+        byte[] shaFile = await DownloadSmallAssetAsync(update.Sha256Url, timeout.Token);
+        string signature = Encoding.ASCII.GetString(await DownloadSmallAssetAsync(update.SignatureUrl, timeout.Token));
+        if (!UpdateSignature.Verify(shaFile, signature))
+        {
+            AppLog.Write(Component, $"Подпись {update.SetupName}.sha256 недействительна");
+            throw new UpdateException(Localizer.Get("UpdErr_BadSignature"));
+        }
+
         // Формат как у sha256sum и build-installer.ps1: "<hex> *<имя файла>"
-        string text = await _http.GetStringAsync(update.Sha256Url, timeout.Token);
-        string hash = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
-        if (hash.Length != 64 || !hash.All(char.IsAsciiHexDigit))
+        string[] parts = Encoding.ASCII.GetString(shaFile).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        string hash = parts.FirstOrDefault() ?? string.Empty;
+        if (parts.Length != 2 || hash.Length != 64 || !hash.All(char.IsAsciiHexDigit))
         {
             throw new UpdateException(Localizer.Get("UpdErr_HashCorrupt"));
         }
+
+        // Имя файла с версией тоже подписано: старый подписанный установщик нельзя
+        // перевыложить под видом новой версии и откатить пользователей на уязвимую сборку
+        string signedName = parts[1].TrimStart('*');
+        bool nameMatches = string.Equals(signedName, update.SetupName, StringComparison.OrdinalIgnoreCase)
+            && signedName.StartsWith(SetupPrefix, StringComparison.OrdinalIgnoreCase)
+            && signedName.EndsWith(SetupSuffix, StringComparison.OrdinalIgnoreCase)
+            && AppVersion.TryParse(signedName[SetupPrefix.Length..^SetupSuffix.Length], out var signedVersion)
+            && signedVersion.CompareTo(update.Version) == 0;
+        if (!nameMatches)
+        {
+            AppLog.Write(Component, $"Подписанный файл {signedName} не соответствует релизу {update.Tag} ({update.SetupName})");
+            throw new UpdateException(Localizer.Get("UpdErr_BadSignature"));
+        }
         return hash;
+    }
+
+    private async Task<byte[]> DownloadSmallAssetAsync(string url, CancellationToken cancellationToken)
+    {
+        using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var buffer = new MemoryStream();
+        var chunk = new byte[1024];
+        int read;
+        while ((read = await source.ReadAsync(chunk, cancellationToken)) > 0)
+        {
+            buffer.Write(chunk, 0, read);
+            if (buffer.Length > MaxSmallAssetSize) throw new UpdateException(Localizer.Get("UpdErr_BadSignature"));
+        }
+        return buffer.ToArray();
     }
 
     /// <summary>

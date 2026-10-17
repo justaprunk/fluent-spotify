@@ -137,6 +137,7 @@
   "UpdErr_Status": "GitHub에서 오류 {0} {1}을(를) 반환했습니다.",
   "UpdErr_Cancelled": "다운로드가 취소되었습니다.",
   "UpdErr_HashMismatch": "다운로드한 설치 프로그램의 체크섬이 일치하지 않아 업데이트를 취소했습니다.",
+  "UpdErr_BadSignature": "Fluent Spotify 개발자가 서명하지 않은 업데이트이므로 설치하지 않았습니다.",
   "UpdErr_HashCorrupt": "릴리스의 체크섬 파일이 손상되어 업데이트를 취소했습니다.",
   "UpdErr_Download": "다운로드 오류: {0} {1}.",
   "UpdErr_NoInternet": "인터넷에 연결되어 있지 않거나 GitHub를 사용할 수 없습니다.",

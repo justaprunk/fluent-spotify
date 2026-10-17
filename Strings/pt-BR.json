@@ -138,6 +138,7 @@
   "UpdErr_Status": "O GitHub retornou o erro {0} {1}.",
   "UpdErr_Cancelled": "Download cancelado.",
   "UpdErr_HashMismatch": "A soma de verificação do instalador baixado não confere — atualização cancelada.",
+  "UpdErr_BadSignature": "A atualização não está assinada pelo desenvolvedor do Fluent Spotify — não foi instalada.",
   "UpdErr_HashCorrupt": "O arquivo de soma de verificação da versão está corrompido — atualização cancelada.",
   "UpdErr_Download": "Erro no download: {0} {1}.",
   "UpdErr_NoInternet": "Sem conexão com a internet ou o GitHub está indisponível.",

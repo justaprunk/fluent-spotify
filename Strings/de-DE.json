@@ -138,6 +138,7 @@
   "UpdErr_Status": "GitHub hat Fehler {0} {1} gemeldet.",
   "UpdErr_Cancelled": "Download abgebrochen.",
   "UpdErr_HashMismatch": "Die Prüfsumme des heruntergeladenen Installers stimmt nicht – das Update wurde abgebrochen.",
+  "UpdErr_BadSignature": "Das Update ist nicht vom Entwickler von Fluent Spotify signiert und wurde nicht installiert.",
   "UpdErr_HashCorrupt": "Die Prüfsummendatei im Release ist beschädigt – das Update wurde abgebrochen.",
   "UpdErr_Download": "Downloadfehler: {0} {1}.",
   "UpdErr_NoInternet": "Keine Internetverbindung oder GitHub ist nicht erreichbar.",

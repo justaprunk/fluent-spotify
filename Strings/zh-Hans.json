@@ -137,6 +137,7 @@
   "UpdErr_Status": "GitHub 返回错误 {0} {1}。",
   "UpdErr_Cancelled": "下载已取消。",
   "UpdErr_HashMismatch": "下载的安装程序校验和不匹配，已取消更新。",
+  "UpdErr_BadSignature": "此更新没有 Fluent Spotify 开发者的签名，因此未安装。",
   "UpdErr_HashCorrupt": "发行版中的校验和文件已损坏，已取消更新。",
   "UpdErr_Download": "下载错误：{0} {1}。",
   "UpdErr_NoInternet": "未连接到互联网，或无法访问 GitHub。",

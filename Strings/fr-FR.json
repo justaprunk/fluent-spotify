@@ -138,6 +138,7 @@
   "UpdErr_Status": "GitHub a renvoyé l’erreur {0} {1}.",
   "UpdErr_Cancelled": "Téléchargement annulé.",
   "UpdErr_HashMismatch": "La somme de contrôle du programme d’installation téléchargé ne correspond pas : mise à jour annulée.",
+  "UpdErr_BadSignature": "La mise à jour n’est pas signée par le développeur de Fluent Spotify : elle n’a pas été installée.",
   "UpdErr_HashCorrupt": "Le fichier de somme de contrôle de la version est endommagé : mise à jour annulée.",
   "UpdErr_Download": "Erreur de téléchargement : {0} {1}.",
   "UpdErr_NoInternet": "Pas de connexion Internet, ou GitHub est indisponible.",

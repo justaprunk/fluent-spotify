@@ -138,6 +138,7 @@
   "UpdErr_Status": "GitHub gaf fout {0} {1}.",
   "UpdErr_Cancelled": "Download geannuleerd.",
   "UpdErr_HashMismatch": "De controlesom van het gedownloade installatieprogramma klopt niet; de update is geannuleerd.",
+  "UpdErr_BadSignature": "De update is niet ondertekend door de ontwikkelaar van Fluent Spotify en is niet geïnstalleerd.",
   "UpdErr_HashCorrupt": "Het controlesombestand in de release is beschadigd; de update is geannuleerd.",
   "UpdErr_Download": "Downloadfout: {0} {1}.",
   "UpdErr_NoInternet": "Geen internetverbinding of GitHub is niet bereikbaar.",

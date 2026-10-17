@@ -138,6 +138,7 @@
   "UpdErr_Status": "GitHub returned error {0} {1}.",
   "UpdErr_Cancelled": "Download cancelled.",
   "UpdErr_HashMismatch": "The checksum of the downloaded installer didn't match, so the update was cancelled.",
+  "UpdErr_BadSignature": "The update isn't signed by the Fluent Spotify developer, so it wasn't installed.",
   "UpdErr_HashCorrupt": "The checksum file in the release is damaged, so the update was cancelled.",
   "UpdErr_Download": "Download error: {0} {1}.",
   "UpdErr_NoInternet": "No internet connection, or GitHub is unavailable.",

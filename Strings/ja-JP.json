@@ -137,6 +137,7 @@
   "UpdErr_Status": "GitHub がエラー {0} {1} を返しました。",
   "UpdErr_Cancelled": "ダウンロードを取り消しました。",
   "UpdErr_HashMismatch": "ダウンロードしたインストーラーのチェックサムが一致しないため、更新を取り消しました。",
+  "UpdErr_BadSignature": "この更新プログラムは Fluent Spotify の開発者によって署名されていないため、インストールしませんでした。",
   "UpdErr_HashCorrupt": "リリースのチェックサム ファイルが壊れているため、更新を取り消しました。",
   "UpdErr_Download": "ダウンロード エラー: {0} {1}。",
   "UpdErr_NoInternet": "インターネットに接続されていないか、GitHub を利用できません。",

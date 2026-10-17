@@ -137,6 +137,7 @@
   "UpdErr_Status": "GitHub 傳回錯誤 {0} {1}。",
   "UpdErr_Cancelled": "已取消下載。",
   "UpdErr_HashMismatch": "下載的安裝程式總和檢查碼不符，已取消更新。",
+  "UpdErr_BadSignature": "此更新沒有 Fluent Spotify 開發者的簽章，因此未安裝。",
   "UpdErr_HashCorrupt": "發行版本中的總和檢查碼檔案已損毀，已取消更新。",
   "UpdErr_Download": "下載錯誤：{0} {1}。",
   "UpdErr_NoInternet": "沒有網際網路連線，或無法連線到 GitHub。",

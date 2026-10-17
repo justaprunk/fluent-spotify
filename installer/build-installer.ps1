@@ -1,12 +1,18 @@
 ﻿# Публикует Fluent Spotify (self-contained, win-x64) и собирает установщик Inno Setup.
 # Запуск из любой папки:  powershell -ExecutionPolicy Bypass -File installer\build-installer.ps1
-# Результат: installer\Output\FluentSpotify-<версия>-Setup-x64.exe и .sha256 рядом.
+# Результат: installer\Output\FluentSpotify-<версия>-Setup-x64.exe, рядом .sha256 и .sha256.sig —
+# подпись .sha256 ключом из signing-key.ps1. Без .sig установленные копии не примут обновление.
+# -Unsigned — сборка без ключа (для себя или форка); такой установщик не годится для релиза.
 
 param(
-    [string]$Iscc
+    [string]$Iscc,
+    [switch]$Unsigned
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'signing-key.ps1') -Library
+# Ключ подписи нужен в конце, но проверяем его до долгой сборки
+$signingKey = if ($Unsigned) { $null } else { Get-SigningKey }
 $root = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $root 'fluent-spotify.csproj'
 $publishDir = Join-Path $root 'publish\win-x64'
@@ -41,5 +47,17 @@ $setup = Join-Path $PSScriptRoot "Output\FluentSpotify-$appVersion-Setup-x64.exe
 $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
 "$hash *$(Split-Path -Leaf $setup)" | Set-Content -Encoding ascii "$setup.sha256"
 
+# Подписываем .sha256, а не сам exe: в нём и хеш, и имя файла с версией, поэтому
+# подписанный установщик старой версии нельзя выдать за новую
+if ($signingKey) {
+    $sig = New-FileSignature $signingKey "$setup.sha256"
+    $signingKey.Dispose()
+}
+else {
+    Remove-Item "$setup.sha256.sig" -ErrorAction SilentlyContinue
+}
+
 Write-Host "Готово: $setup"
 Write-Host "SHA-256: $hash"
+if ($signingKey) { Write-Host "Подпись: $sig (загрузите в релиз вместе с exe и .sha256)" }
+else { Write-Warning 'Сборка без подписи (-Unsigned): установленные копии не примут её как обновление' }

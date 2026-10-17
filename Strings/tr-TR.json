@@ -138,6 +138,7 @@
   "UpdErr_Status": "GitHub {0} {1} hatası döndürdü.",
   "UpdErr_Cancelled": "İndirme iptal edildi.",
   "UpdErr_HashMismatch": "İndirilen yükleyicinin sağlama toplamı eşleşmedi; güncelleme iptal edildi.",
+  "UpdErr_BadSignature": "Güncelleme Fluent Spotify geliştiricisi tarafından imzalanmamış; yüklenmedi.",
   "UpdErr_HashCorrupt": "Sürümdeki sağlama toplamı dosyası bozuk; güncelleme iptal edildi.",
   "UpdErr_Download": "İndirme hatası: {0} {1}.",
   "UpdErr_NoInternet": "İnternet bağlantısı yok veya GitHub'a ulaşılamıyor.",

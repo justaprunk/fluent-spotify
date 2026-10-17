@@ -134,7 +134,18 @@ To build the installer yourself (needs [Inno Setup 6](https://jrsoftware.org/isi
 powershell -ExecutionPolicy Bypass -File installer\build-installer.ps1
 ```
 
-The script publishes a self-contained build and writes `installer\Output\FluentSpotify-<version>-Setup-x64.exe` plus its `.sha256`.
+The script publishes a self-contained build and writes `installer\Output\FluentSpotify-<version>-Setup-x64.exe` plus its `.sha256` and `.sha256.sig`. Without the maintainer's signing key, add `-Unsigned`: the installer works, but the in-app updater won't accept it.
+
+### Releases and update signing
+
+The in-app updater installs a release only if it is signed with the maintainer's offline key, so a compromised GitHub account can't push an update to users.
+
+- **Key.** ECDSA P-256, created once with `installer\signing-key.ps1 -New`. The private key lives outside the repo in `%USERPROFILE%\.fluent-spotify\update-signing-key.dpapi`, encrypted with Windows DPAPI for the current user and readable only by that account. The public key (SubjectPublicKeyInfo, base64) is embedded in `Core/Updates/UpdateSignature.cs`. Back the key up offline with `pwsh -File installer\signing-key.ps1 -Export <file>` (password-protected PKCS#8) and restore it with `-Import <file>`. **If the key is lost, installed copies can't be updated anymore and users have to reinstall manually.**
+- **Signature.** `build-installer.ps1` signs the exact bytes of `<installer>.sha256` (the hash plus the file name with its version) with ECDSA/SHA-256. `<installer>.sha256.sig` holds one line: the base64 IEEE P1363 signature (`r || s`, 64 bytes).
+- **Check in the app.** `UpdateService` only offers releases that have all three assets on `github.com/justaprunk/fluent-spotify/releases/download/`. Before launching the installer it verifies the signature of `.sha256`, checks that the signed file name and version match the release (this blocks re-uploading an old signed build as a new version), then checks the SHA-256 of the downloaded installer through a write-locked handle.
+- **Publishing a release.** Bump the version in `fluent-spotify.csproj` and `installer\FluentSpotify.iss`, run `build-installer.ps1`, and attach all three files from `installer\Output\` to the GitHub release: `.exe`, `.exe.sha256` and `.exe.sha256.sig`.
+- **Transition.** Releases up to 1.3.2 have no signature. Their updaters don't check signatures and install 1.3.3 as usual. From 1.3.3 on, the app ignores unsigned releases.
+- **Testing (Debug builds only).** `FLUENT_SPOTIFY_UPDATE_FEED=<url>` replaces the GitHub releases API with your own list in the same format. Assets may then come from the same host, but they still have to be signed with the embedded key.
 
 > [!TIP]
 > With `--self-contained false`, the target machine needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
