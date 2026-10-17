@@ -36,6 +36,15 @@ public partial class App : Application
             e.Handled = true;
         };
 
+        // Исключения фоновых потоков и забытых задач XAML не видит — пусть хотя бы остаются в логе
+        AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+            AppLog.Write("FluentSpotify", $"Unhandled (terminating: {e.IsTerminating}): {e.ExceptionObject}");
+        TaskScheduler.UnobservedTaskException += (sender, e) =>
+        {
+            AppLog.Write("FluentSpotify", e.Exception);
+            e.SetObserved();
+        };
+
         ConfigureServices();
     }
 

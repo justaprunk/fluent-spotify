@@ -7,6 +7,8 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using SpotifyAPI.Web;
 using Microsoft.UI.Input;
+using Microsoft.UI.Input.DragDrop;
+using Microsoft.UI.Content;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.System;
@@ -37,8 +39,44 @@ public sealed partial class MainWindow
 
     private PlaylistFolderService Folders => ViewModel.Folders;
 
+    /// <summary>
+    /// Держим DragDropManager окна, пока живо окно. XAML хранит ссылки на него только во временных
+    /// объектах перетаскивания; когда сборщик мусора финализирует их обёртки, последняя ссылка
+    /// освобождалась в потоке финализатора, а DragDropManager закрывается только в своём потоке —
+    /// исключение там завершало процесс (0xc0000409 в ucrtbase.dll, 1.3.0).
+    /// </summary>
+    private readonly List<object> _dragDropManagers = new();
+
+    private void PinDragDropManager()
+    {
+        try
+        {
+            // Остров с тем же DragDropManager держим тоже: иначе его обёртку финализирует тот же поток
+            foreach (var island in ContentIsland.FindAllForCurrentThread())
+            {
+                if (DragDropManager.GetForIsland(island) is { } manager && !_dragDropManagers.Contains(manager))
+                {
+                    _dragDropManagers.Add(island);
+                    _dragDropManagers.Add(manager);
+                }
+            }
+            Shared.Diagnostics.AppLog.Write("Folders", $"DragDropManager закреплён: {_dragDropManagers.Count / 2}");
+            if (_dragDropManagers.Count == 0)
+            {
+                Shared.Diagnostics.AppLog.Write("Folders", "DragDropManager недоступен — перетаскивание может завершить приложение");
+            }
+        }
+        catch (Exception ex)
+        {
+            Shared.Diagnostics.AppLog.Write("Folders", ex);
+        }
+    }
+
     private void SetupLibraryHeader()
     {
+        // Окно уже показано — у потока есть остров контента и его DragDropManager
+        RootGrid.Loaded += (s, e) => PinDragDropManager();
+
         // Стиль WinUI выключает заголовок (IsEnabled = false), а у корня шаблона нет фона —
         // такой элемент не получает ни меню, ни бросок. Включаем и даём прозрачный фон.
         LibraryHeader.IsEnabled = true;
