@@ -11,14 +11,26 @@ namespace FluentSpotify.Core.Updates;
 /// </summary>
 public static class UpdateSignature
 {
-    /// <summary>Открытый ключ (SubjectPublicKeyInfo, base64). Смена ключа отрежет установленные копии от обновлений.</summary>
-    private const string PublicKey =
-        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/k+GK3InWhFR++WqkyWqe22cgzhOfUttW2a7hUl3G79YzqC5GcHWyJaESOV4n0lveGYm+ShB8msFoKVMlhmABg==";
+    /// <summary>
+    /// Открытые ключи (SubjectPublicKeyInfo, base64); подходит подпись любым из них.
+    /// Основной ключ подписывает каждый релиз. Резервный хранится офлайн на внешнем носителе
+    /// и нужен, если основной утерян или скомпрометирован: релиз, подписанный резервным,
+    /// заменяет этот список. Без такого релиза смена ключей отрезала бы установленные копии от обновлений.
+    /// </summary>
+    private static readonly string[] PublicKeys =
+    [
+        // Основной: %USERPROFILE%\.fluent-spotify\update-signing-key.dpapi
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/k+GK3InWhFR++WqkyWqe22cgzhOfUttW2a7hUl3G79YzqC5GcHWyJaESOV4n0lveGYm+ShB8msFoKVMlhmABg==",
+        // Резервный: signing-key.ps1 -NewRecovery, только на внешнем носителе
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEssdfnrASzrBUr2oYL0mXhaJwsDaeBy9nmKweZjbRIERy35sv0CACaZdPqQX2CE1T6wRoizaAlmS1oYAbRxv38g=="
+    ];
 
     private const int SignatureSize = 64;
 
     /// <summary>Проверяет подпись (текст файла .sig) над байтами data.</summary>
-    public static bool Verify(ReadOnlySpan<byte> data, string signatureBase64)
+    public static bool Verify(ReadOnlySpan<byte> data, string signatureBase64) => Verify(data, signatureBase64, PublicKeys);
+
+    internal static bool Verify(ReadOnlySpan<byte> data, string signatureBase64, IReadOnlyList<string> publicKeys)
     {
         byte[] signature;
         try
@@ -31,8 +43,12 @@ public static class UpdateSignature
         }
         if (signature.Length != SignatureSize) return false;
 
-        using var key = ECDsa.Create();
-        key.ImportSubjectPublicKeyInfo(Convert.FromBase64String(PublicKey), out _);
-        return key.VerifyData(data, signature, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+        foreach (string publicKey in publicKeys)
+        {
+            using var key = ECDsa.Create();
+            key.ImportSubjectPublicKeyInfo(Convert.FromBase64String(publicKey), out _);
+            if (key.VerifyData(data, signature, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation)) return true;
+        }
+        return false;
     }
 }
