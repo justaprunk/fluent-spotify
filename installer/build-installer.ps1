@@ -40,6 +40,13 @@ if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
 dotnet publish $project -c Release -r win-x64 --self-contained true -p:Platform=x64 -o $publishDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish завершился с кодом $LASTEXITCODE" }
 
+# Всё из publish попадает в публичный установщик: ключей и секретов там быть не должно
+$leaks = Get-ChildItem $publishDir -Recurse -File | Where-Object {
+    $_.Extension -in '.pem', '.key', '.p12', '.pfx', '.dpapi', '.env' -or $_.Name -like 'update-signing-key*' -or
+    ($_.Length -lt 1MB -and $_.Extension -in '.txt', '.json', '.config', '.xml' -and (Select-String -Path $_.FullName -Pattern 'PRIVATE KEY-----' -SimpleMatch -Quiet))
+}
+if ($leaks) { throw "В publish похожие на ключи файлы, установщик не собран: $($leaks.FullName -join ', ')" }
+
 & $Iscc "/DAppVersion=$appVersion" "/DAppFileVersion=$fileVersion" "/DPublishDir=$publishDir" (Join-Path $PSScriptRoot 'FluentSpotify.iss')
 if ($LASTEXITCODE -ne 0) { throw "ISCC завершился с кодом $LASTEXITCODE" }
 

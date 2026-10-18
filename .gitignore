@@ -22,5 +22,12 @@ BundleArtifacts/
 .env
 *.local.json
 
+# Ключи подписи обновлений никогда не кладём в репозиторий (installer/signing-key.ps1)
+*.pem
+*.key
+*.p12
+*.dpapi
+update-signing-key*
+
 # Installer output
 installer/Output/

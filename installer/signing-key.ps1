@@ -113,6 +113,13 @@ function Read-Password([string]$Prompt) {
 
 if ($Export) {
     if ($PSVersionTable.PSEdition -ne 'Core') { throw 'Для -Export нужен PowerShell 7 (pwsh)' }
+    # Копию нельзя случайно закоммитить или отправить в облако: только вне git и синхронизируемых папок
+    $exportDir = [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($Export))
+    if (-not (Test-Path $exportDir)) { throw "Папка не найдена: $exportDir" }
+    if ((& git -C $exportDir rev-parse --is-inside-work-tree 2>$null) -eq 'true') { throw "Папка $exportDir внутри git-репозитория — выберите другое место (флешку)" }
+    foreach ($synced in @($env:OneDrive, $env:OneDriveConsumer, $env:OneDriveCommercial, (Join-Path $env:USERPROFILE 'Dropbox'), (Join-Path $env:USERPROFILE 'Google Drive'))) {
+        if ($synced -and $exportDir.StartsWith($synced, [StringComparison]::OrdinalIgnoreCase)) { throw "Папка $exportDir синхронизируется с облаком — выберите другое место (флешку)" }
+    }
     $key = Get-SigningKey
     $password = Read-Password 'Пароль для резервной копии (не менее 12 символов)'
     if ($password.Length -lt 12) { throw 'Слишком короткий пароль' }
