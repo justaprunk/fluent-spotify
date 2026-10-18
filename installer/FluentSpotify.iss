@@ -4,10 +4,10 @@
 ;   ISCC.exe /DAppVersion=1.3.1 /DAppFileVersion=1.3.1.0 /DPublishDir=..\publish\win-x64 FluentSpotify.iss
 
 #ifndef AppVersion
-  #define AppVersion "1.3.3"
+  #define AppVersion "1.4.0"
 #endif
 #ifndef AppFileVersion
-  #define AppFileVersion "1.3.3.0"
+  #define AppFileVersion "1.4.0.0"
 #endif
 #ifndef PublishDir
   #define PublishDir "..\publish\win-x64"
