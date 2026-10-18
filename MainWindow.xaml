@@ -119,7 +119,11 @@
                 <views:NowPlayingView x:Name="NowPlayingPane" />
             </SplitView.Pane>
 
+            <!-- Область страниц — отдельная карточка со скруглёнными углами со всех сторон.
+                 Отступ справа и снизу совпадает с отступом плеера (16): иначе правый и нижний
+                 края карточки упирались в панель «Сейчас играет» и плеер и оставались прямыми -->
             <NavigationView x:Name="NavView"
+                            Margin="0,0,16,8"
                             PaneDisplayMode="Auto"
                             ExpandedModeThresholdWidth="1000"
                             CompactModeThresholdWidth="640"
@@ -130,6 +134,11 @@
                             DisplayModeChanged="NavView_DisplayModeChanged"
                             Expanding="NavView_Expanding"
                             Collapsed="NavView_Collapsed">
+                <NavigationView.Resources>
+                    <!-- По умолчанию скруглён только левый верхний угол и нет рамки справа и снизу -->
+                    <CornerRadius x:Key="NavigationViewContentGridCornerRadius">8</CornerRadius>
+                    <Thickness x:Key="NavigationViewContentGridBorderThickness">1</Thickness>
+                </NavigationView.Resources>
                 <NavigationView.MenuItems>
                     <NavigationViewItem Content="{l:Tr Key=Nav_Home}" Tag="Home">
                         <NavigationViewItem.Icon>

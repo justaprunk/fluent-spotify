@@ -53,8 +53,9 @@
         <Border x:Name="OverlayBackground" Visibility="Collapsed"
                 Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}"
                 BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1,0,0,0" />
-        <ScrollViewer x:Name="RootScroll" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,0,12,12">
+        <!-- Прокрутка обрезается по скруглённой рамке: иначе нижняя карточка обрывалась прямой линией у края панели -->
+        <Border Margin="0,0,16,8" CornerRadius="8">
+        <ScrollViewer x:Name="RootScroll" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Spacing="12">
                 <!-- Токен без новых скоупов: «Нравится» и подписки недоступны до повторного входа -->
                 <InfoBar IsOpen="{x:Bind ViewModel.NeedsRelogin, Mode=TwoWay}" Severity="Informational"
@@ -271,5 +272,6 @@
                 </Border>
             </StackPanel>
         </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>
