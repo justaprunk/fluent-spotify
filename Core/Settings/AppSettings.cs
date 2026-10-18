@@ -44,6 +44,15 @@ public sealed partial class AppSettings
     /// <summary>На главной показывать плейлисты по папкам — отдельный раздел на каждую папку.</summary>
     public bool GroupHomeByFolders { get; set; } = true;
 
+    /// <summary>Правая панель «Сейчас играет» открыта (на широком окне).</summary>
+    public bool NowPlayingPaneOpen { get; set; } = true;
+
+    /// <summary>Тексты песен в панели «Сейчас играет» из стороннего сервиса LRCLIB.</summary>
+    public bool ShowLyrics { get; set; } = true;
+
+    /// <summary>Краткая биография артиста из Википедии (поиск статьи через Wikidata по Spotify ID).</summary>
+    public bool ShowArtistBio { get; set; } = true;
+
     /// <summary>Предлагать пре-релизы (бета-версии) из GitHub Releases.</summary>
     public bool IncludePrereleases { get; set; } = true;
 

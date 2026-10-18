@@ -68,8 +68,44 @@ public sealed partial class MainWindow : FluentWindow
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         Updates.DetailsRequested += OnUpdateDetailsRequested;
 
+        // Панель «Сейчас играет»: открыта ли она и как стоит — зависит от ширины окна
+        NowPlaying.PropertyChanged += OnNowPlayingPropertyChanged;
+        RootGrid.SizeChanged += (s, e) => UpdateNowPlayingLayout(e.NewSize.Width);
+
         // У Window в WinUI 3 нет события Loaded — используем корневой элемент
         RootGrid.Loaded += OnRootLoaded;
+    }
+
+    // Уже этой ширины рядом с панелью навигации и «Сейчас играет» содержимому тесно
+    private const double NowPlayingInlineMinWidth = 1000;
+
+    private NowPlayingViewModel NowPlaying => ViewModel.PlayerBar.NowPlaying;
+
+    private void UpdateNowPlayingLayout(double windowWidth)
+    {
+        bool wide = windowWidth >= NowPlayingInlineMinWidth;
+        var mode = wide ? SplitViewDisplayMode.Inline : SplitViewDisplayMode.Overlay;
+        if (NowPlayingSplit.DisplayMode != mode)
+        {
+            NowPlayingSplit.DisplayMode = mode;
+            NowPlayingPane.SetOverlayMode(!wide);
+        }
+        NowPlaying.ApplyLayout(wide);
+        NowPlayingSplit.IsPaneOpen = NowPlaying.IsPaneOpen;
+    }
+
+    private void OnNowPlayingPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(NowPlayingViewModel.IsPaneOpen))
+        {
+            NowPlayingSplit.IsPaneOpen = NowPlaying.IsPaneOpen;
+        }
+    }
+
+    /// <summary>Панель поверх содержимого закрыли щелчком мимо неё — синхронизируем кнопку в плеер-баре.</summary>
+    private void NowPlayingSplit_PaneClosed(SplitView sender, object args)
+    {
+        if (NowPlaying.IsPaneOpen) NowPlaying.IsPaneOpen = false;
     }
 
     private void ApplyAppearance(AppSettings settings)

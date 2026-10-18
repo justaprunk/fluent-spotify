@@ -105,61 +105,74 @@
 
         <!-- Экран 2: Авторизованная рабочая среда.
              Плейлисты добавляются в MenuItems из кода: MenuItems и MenuItemsSource нельзя использовать вместе. -->
-        <NavigationView Grid.Row="2"
-                        x:Name="NavView"
-                        Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay}"
-                        PaneDisplayMode="Auto"
-                        ExpandedModeThresholdWidth="1000"
-                        CompactModeThresholdWidth="640"
-                        IsBackButtonVisible="Collapsed"
-                        IsSettingsVisible="False"
-                        OpenPaneLength="260"
-                        SelectionChanged="NavView_SelectionChanged"
-                        DisplayModeChanged="NavView_DisplayModeChanged"
-                        Expanding="NavView_Expanding"
-                        Collapsed="NavView_Collapsed">
-            <NavigationView.MenuItems>
-                <NavigationViewItem Content="{l:Tr Key=Nav_Home}" Tag="Home">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE80F;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Content="{l:Tr Key=Nav_Search}" Tag="Search">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE721;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Content="{l:Tr Key=Nav_Liked}" Tag="Liked">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xEB51;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Content="{l:Tr Key=Nav_Wrapped}" Tag="Wrapped">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE9D2;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <!-- Папки и плейлисты добавляются из кода (MainWindow.Library.cs) -->
-                <NavigationViewItemHeader x:Name="LibraryHeader" Content="{l:Tr Key=Nav_Library}" />
-            </NavigationView.MenuItems>
+        <!-- Справа — панель «Сейчас играет»: на широком окне рядом с содержимым,
+             на узком закрывается и открывается кнопкой поверх него (MainWindow.UpdateNowPlayingLayout) -->
+        <SplitView Grid.Row="2"
+                   x:Name="NowPlayingSplit"
+                   Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay}"
+                   PanePlacement="Right"
+                   DisplayMode="Inline"
+                   OpenPaneLength="340"
+                   PaneBackground="Transparent"
+                   PaneClosed="NowPlayingSplit_PaneClosed">
+            <SplitView.Pane>
+                <views:NowPlayingView x:Name="NowPlayingPane" />
+            </SplitView.Pane>
 
-            <NavigationView.FooterMenuItems>
-                <NavigationViewItem Content="{l:Tr Key=Nav_Logout}" Tag="Logout" SelectsOnInvoked="False" Tapped="LogoutItem_Tapped">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xF3B1;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <!-- Свой пункт вместо встроенного: встроенный подписан "Settings" и не локализуется -->
-                <NavigationViewItem Content="{l:Tr Key=Nav_Settings}" Tag="Settings">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE713;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-            </NavigationView.FooterMenuItems>
+            <NavigationView x:Name="NavView"
+                            PaneDisplayMode="Auto"
+                            ExpandedModeThresholdWidth="1000"
+                            CompactModeThresholdWidth="640"
+                            IsBackButtonVisible="Collapsed"
+                            IsSettingsVisible="False"
+                            OpenPaneLength="260"
+                            SelectionChanged="NavView_SelectionChanged"
+                            DisplayModeChanged="NavView_DisplayModeChanged"
+                            Expanding="NavView_Expanding"
+                            Collapsed="NavView_Collapsed">
+                <NavigationView.MenuItems>
+                    <NavigationViewItem Content="{l:Tr Key=Nav_Home}" Tag="Home">
+                        <NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE80F;" />
+                        </NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                    <NavigationViewItem Content="{l:Tr Key=Nav_Search}" Tag="Search">
+                        <NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE721;" />
+                        </NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                    <NavigationViewItem Content="{l:Tr Key=Nav_Liked}" Tag="Liked">
+                        <NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xEB51;" />
+                        </NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                    <NavigationViewItem Content="{l:Tr Key=Nav_Wrapped}" Tag="Wrapped">
+                        <NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE9D2;" />
+                        </NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                    <!-- Папки и плейлисты добавляются из кода (MainWindow.Library.cs) -->
+                    <NavigationViewItemHeader x:Name="LibraryHeader" Content="{l:Tr Key=Nav_Library}" />
+                </NavigationView.MenuItems>
 
-            <!-- Основной контейнер страниц (HomeView, SearchView, PlaylistDetailView) -->
-            <Frame x:Name="ContentFrame" Background="Transparent" Margin="0,0,12,0" />
-        </NavigationView>
+                <NavigationView.FooterMenuItems>
+                    <NavigationViewItem Content="{l:Tr Key=Nav_Logout}" Tag="Logout" SelectsOnInvoked="False" Tapped="LogoutItem_Tapped">
+                        <NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xF3B1;" />
+                        </NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                    <!-- Свой пункт вместо встроенного: встроенный подписан "Settings" и не локализуется -->
+                    <NavigationViewItem Content="{l:Tr Key=Nav_Settings}" Tag="Settings">
+                        <NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE713;" />
+                        </NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                </NavigationView.FooterMenuItems>
+
+                <!-- Основной контейнер страниц (HomeView, SearchView, PlaylistDetailView) -->
+                <Frame x:Name="ContentFrame" Background="Transparent" Margin="0,0,12,0" />
+            </NavigationView>
+        </SplitView>
 
         <!-- Нижний бар воспроизведения -->
         <views:PlayerBarView Grid.Row="3"

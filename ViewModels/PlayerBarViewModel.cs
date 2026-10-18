@@ -49,9 +49,13 @@ public partial class PlayerBarViewModel : ObservableObject
     [ObservableProperty]
     private bool _isRepeat;
 
-    public PlayerBarViewModel(SpotifyApiClient apiClient)
+    /// <summary>Правая панель «Сейчас играет»: её переключатель — в плеер-баре.</summary>
+    public NowPlayingViewModel NowPlaying { get; }
+
+    public PlayerBarViewModel(SpotifyApiClient apiClient, NowPlayingViewModel nowPlaying)
     {
         _apiClient = apiClient;
+        NowPlaying = nowPlaying;
         // View-модель создаётся в UI-потоке; события API приходят из фонового —
         // изменения свойств нужно возвращать в UI-поток, иначе привязки падают с RPC_E_WRONG_THREAD
         _dispatcher = DispatcherQueue.GetForCurrentThread();

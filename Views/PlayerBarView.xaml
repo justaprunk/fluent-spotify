@@ -35,7 +35,8 @@
                         <Setter Target="RepeatButton.Visibility" Value="Collapsed" />
                         <Setter Target="PositionText.Visibility" Value="Collapsed" />
                         <Setter Target="DurationText.Visibility" Value="Collapsed" />
-                        <Setter Target="RightColumn.Width" Value="0" />
+                        <!-- Остаётся только кнопка панели «Сейчас играет» -->
+                        <Setter Target="RightColumn.Width" Value="Auto" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -166,17 +167,27 @@
                     </Grid>
                 </StackPanel>
 
-                <!-- 3. Громкость -->
-                <StackPanel x:Name="VolumePanel" Grid.Column="2" Orientation="Horizontal"
-                            HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="8">
-                    <FontIcon Glyph="&#xE767;" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <Slider x:Name="VolumeSlider"
-                            Width="110"
-                            Minimum="0"
-                            Maximum="100"
-                            Value="{x:Bind ViewModel.Volume, Mode=TwoWay}"
-                            VerticalAlignment="Center"
-                            AutomationProperties.Name="{l:Tr Key=Player_Volume}" />
+                <!-- 3. Панель «Сейчас играет» и громкость -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="12">
+                    <ToggleButton IsChecked="{x:Bind ViewModel.NowPlaying.IsPaneOpen, Mode=TwoWay}"
+                                  Width="32" Height="32" Padding="0" CornerRadius="16"
+                                  Background="Transparent" BorderThickness="0"
+                                  ToolTipService.ToolTip="{l:Tr Key=NowPlaying_Toggle}"
+                                  AutomationProperties.Name="{l:Tr Key=NowPlaying_Toggle}">
+                        <FontIcon Glyph="&#xE90B;" FontSize="14" />
+                    </ToggleButton>
+
+                    <StackPanel x:Name="VolumePanel" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                        <FontIcon Glyph="&#xE767;" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <Slider x:Name="VolumeSlider"
+                                Width="110"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="{x:Bind ViewModel.Volume, Mode=TwoWay}"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="{l:Tr Key=Player_Volume}" />
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>

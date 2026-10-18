@@ -1,6 +1,7 @@
 using FluentSpotify.Core.Api;
 using FluentSpotify.Core.Auth;
 using FluentSpotify.Core.Library;
+using FluentSpotify.Core.NowPlaying;
 using FluentSpotify.Core.Playback;
 using FluentSpotify.Core.Settings;
 using FluentSpotify.Core.Updates;
@@ -75,8 +76,11 @@ public partial class App : Application
         services.AddSingleton<BackgroundPlaybackService>();
         services.AddSingleton<UpdateService>();
         services.AddSingleton<PlaylistFolderService>();
+        services.AddSingleton<LyricsService>();
+        services.AddSingleton<ArtistBioService>();
 
         // 2. ViewModels
+        services.AddSingleton<NowPlayingViewModel>();
         services.AddSingleton<PlayerBarViewModel>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<UpdateViewModel>();

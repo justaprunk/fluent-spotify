@@ -21,8 +21,17 @@ public class PkceAuthService
 
     // Скоупы для управления плеером, библиотекой и плейлистами.
     // user-top-read — «Мои итоги», playlist-modify-private — сохранение итогов в приватный плейлист.
+    // Панель «Сейчас играет»: user-library-modify — отметка «Нравится», user-follow-read/modify — подписка на артистов.
+    public static readonly string[] NowPlayingScopes =
+    [
+        Scopes.UserLibraryModify,
+        Scopes.UserFollowRead,
+        Scopes.UserFollowModify
+    ];
+
     private static readonly string[] RequiredScopes =
     [
+        .. NowPlayingScopes,
         Scopes.UserReadPlaybackState,
         Scopes.UserModifyPlaybackState,
         Scopes.UserReadCurrentlyPlaying,

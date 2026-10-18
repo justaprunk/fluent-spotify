@@ -1,0 +1,275 @@
+<UserControl
+    x:Class="FluentSpotify.Views.NowPlayingView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:FluentSpotify.Localization"
+    xmlns:vm="using:FluentSpotify.ViewModels">
+
+    <UserControl.Resources>
+        <!-- Карточки секций — как в «Моих итогах»: полупрозрачный фон поверх Mica/Acrylic -->
+        <Style x:Key="NowPlayingCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="16,12,16,14" />
+        </Style>
+        <Style x:Key="CardHeaderTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyStrongTextBlockStyle}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style x:Key="CaptionLinkStyle" TargetType="HyperlinkButton">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="4,2" />
+        </Style>
+        <Style x:Key="FollowButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="12,3,12,4" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <DataTemplate x:Key="QueueItemTemplate" x:DataType="vm:QueueItemView">
+            <Grid ColumnSpacing="12" Padding="0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Width="44" Height="44" CornerRadius="4"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+                    <Image Source="{x:Bind ImageUrl, Converter={StaticResource UrlToImageSourceConverter}}" Stretch="UniformToFill" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                    <TextBlock Text="{x:Bind Subtitle}" FontSize="12" TextTrimming="CharacterEllipsis" MaxLines="1"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Поверх содержимого (узкое окно) панели нужен свой фон; рядом с ним — прозрачна, как остальное окно -->
+        <Border x:Name="OverlayBackground" Visibility="Collapsed"
+                Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1,0,0,0" />
+        <ScrollViewer x:Name="RootScroll" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
+                      Padding="0,0,12,12">
+            <StackPanel Spacing="12">
+                <!-- Токен без новых скоупов: «Нравится» и подписки недоступны до повторного входа -->
+                <InfoBar IsOpen="{x:Bind ViewModel.NeedsRelogin, Mode=TwoWay}" Severity="Informational"
+                         Title="{l:Tr Key=NowPlaying_ReloginTitle}" Message="{l:Tr Key=NowPlaying_ReloginMessage}">
+                    <InfoBar.ActionButton>
+                        <Button Content="{l:Tr Key=Wrapped_Relogin}" Style="{ThemeResource AccentButtonStyle}"
+                                Command="{x:Bind ViewModel.ReloginCommand}" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
+
+                <!-- Ничего не играет -->
+                <StackPanel Spacing="8" Margin="0,48,0,0" HorizontalAlignment="Center"
+                            Visibility="{x:Bind ViewModel.HasTrack, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                    <FontIcon Glyph="&#xEC4F;" FontSize="32" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{l:Tr Key=NowPlaying_Nothing}" TextAlignment="Center" TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+
+                <!-- 1. Контекст, обложка, название и «Нравится» -->
+                <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasTrack, Mode=OneWay}">
+                    <TextBlock Text="{x:Bind ViewModel.ContextTitle, Mode=OneWay}"
+                               Style="{StaticResource BodyStrongTextBlockStyle}"
+                               TextTrimming="CharacterEllipsis" MaxLines="1" Margin="2,4,0,0"
+                               Visibility="{x:Bind ViewModel.HasContextTitle, Mode=OneWay}" />
+
+                    <!-- Квадратная обложка: высоту выравниваем по ширине в коде -->
+                    <Border x:Name="CoverBorder" CornerRadius="8" SizeChanged="OnCoverSizeChanged"
+                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+                        <Grid>
+                            <FontIcon Glyph="&#xEC4F;" FontSize="40"
+                                      Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Image Source="{x:Bind ViewModel.CoverUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
+                                   Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" FontSize="20" FontWeight="Bold"
+                                       TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"
+                                       IsTextSelectionEnabled="True" />
+                            <TextBlock Text="{x:Bind ViewModel.Artists, Mode=OneWay}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+
+                        <Button Grid.Column="1" Width="36" Height="36" Padding="0" CornerRadius="18"
+                                Background="Transparent" BorderThickness="0" VerticalAlignment="Center"
+                                Command="{x:Bind ViewModel.ToggleLikeCommand}"
+                                Visibility="{x:Bind ViewModel.CanToggleLike, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.LikeToolTip, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind ViewModel.LikeToolTip, Mode=OneWay}">
+                            <Grid>
+                                <!-- Сохранён — заполненная галочка цвета акцента, нет — плюс в круге -->
+                                <FontIcon Glyph="&#xEC61;" FontSize="20"
+                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                          Visibility="{x:Bind ViewModel.IsLiked, Mode=OneWay}" />
+                                <FontIcon Glyph="&#xECC8;" FontSize="20"
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          Visibility="{x:Bind ViewModel.IsLiked, Mode=OneWay, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                            </Grid>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+
+                <!-- 2. Текст песни (LRCLIB) -->
+                <Border Style="{StaticResource NowPlayingCardStyle}" Visibility="{x:Bind ViewModel.HasLyrics, Mode=OneWay}">
+                    <Grid RowSpacing="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{l:Tr Key=NowPlaying_Lyrics}" Style="{StaticResource CardHeaderTextStyle}" />
+                            <HyperlinkButton Grid.Column="1" Style="{StaticResource CaptionLinkStyle}"
+                                             Content="{x:Bind ViewModel.LyricsExpandText, Mode=OneWay}"
+                                             Command="{x:Bind ViewModel.ToggleLyricsExpandedCommand}" />
+                        </Grid>
+
+                        <ScrollViewer x:Name="LyricsScroll" Grid.Row="1" Height="200"
+                                      HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Hidden">
+                            <ItemsControl x:Name="LyricsList" ItemsSource="{x:Bind ViewModel.LyricLines}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:LyricLineItem">
+                                        <TextBlock Text="{x:Bind Text}" Opacity="{x:Bind Opacity, Mode=OneWay}"
+                                                   FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"
+                                                   Margin="0,0,0,8" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <HyperlinkButton Grid.Row="2" Style="{StaticResource CaptionLinkStyle}" Margin="-4,0,0,-6"
+                                         Content="{l:Tr Key=NowPlaying_LyricsSource}" NavigateUri="https://lrclib.net"
+                                         Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                    </Grid>
+                </Border>
+
+                <!-- 3. Об исполнителе: фото, подписка, краткая биография из Википедии -->
+                <Border Style="{StaticResource NowPlayingCardStyle}" Padding="0"
+                        Visibility="{x:Bind ViewModel.HasArtist, Mode=OneWay}">
+                    <StackPanel>
+                        <Grid Padding="16,12,16,0">
+                            <TextBlock Text="{l:Tr Key=NowPlaying_AboutArtist}" Style="{StaticResource CardHeaderTextStyle}" />
+                        </Grid>
+                        <Border Height="180" Margin="0,12,0,0" Visibility="{x:Bind ViewModel.HasArtistImage, Mode=OneWay}">
+                            <Image Source="{x:Bind ViewModel.ArtistImageUrl, Mode=OneWay, Converter={StaticResource UrlToImageSourceConverter}}"
+                                   Stretch="UniformToFill" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Padding="16,12,16,14" Spacing="8">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{x:Bind ViewModel.MainArtist.Name, Mode=OneWay}"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Style="{StaticResource FollowButtonStyle}"
+                                        Content="{x:Bind ViewModel.MainArtist.FollowText, Mode=OneWay}"
+                                        Visibility="{x:Bind ViewModel.MainArtist.CanFollow, Mode=OneWay}"
+                                        Command="{x:Bind ViewModel.ToggleFollowCommand}"
+                                        CommandParameter="{x:Bind ViewModel.MainArtist, Mode=OneWay}" />
+                            </Grid>
+                            <StackPanel Spacing="2" Visibility="{x:Bind ViewModel.HasArtistBio, Mode=OneWay}">
+                                <TextBlock Text="{x:Bind ViewModel.ArtistBio, Mode=OneWay}" FontSize="13"
+                                           TextWrapping="Wrap" MaxLines="5" TextTrimming="WordEllipsis"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <HyperlinkButton Style="{StaticResource CaptionLinkStyle}" Margin="-4,0,0,-6"
+                                                 Content="{l:Tr Key=NowPlaying_BioSource}"
+                                                 Command="{x:Bind ViewModel.OpenArtistBioCommand}"
+                                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- 4. Авторы: только исполнители трека (авторов песен и продюсеров в Web API нет) -->
+                <Border Style="{StaticResource NowPlayingCardStyle}" Visibility="{x:Bind ViewModel.HasCredits, Mode=OneWay}">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="{l:Tr Key=NowPlaying_Credits}" Style="{StaticResource CardHeaderTextStyle}" />
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Credits}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Spacing="10" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ArtistCreditItem">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{x:Bind Role}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Style="{StaticResource FollowButtonStyle}"
+                                                Content="{x:Bind FollowText, Mode=OneWay}"
+                                                Visibility="{x:Bind CanFollow, Mode=OneWay}"
+                                                Tag="{x:Bind}" Click="OnFollowClick" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- 5. Далее в очереди -->
+                <Border Style="{StaticResource NowPlayingCardStyle}" Visibility="{x:Bind ViewModel.HasQueue, Mode=OneWay}">
+                    <StackPanel Spacing="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{l:Tr Key=NowPlaying_NextInQueue}" Style="{StaticResource CardHeaderTextStyle}" />
+                            <HyperlinkButton Grid.Column="1" Style="{StaticResource CaptionLinkStyle}"
+                                             Content="{l:Tr Key=NowPlaying_OpenQueue}" Click="OnOpenQueueClick">
+                                <FlyoutBase.AttachedFlyout>
+                                    <Flyout Placement="LeftEdgeAlignedBottom">
+                                        <Flyout.FlyoutPresenterStyle>
+                                            <Style TargetType="FlyoutPresenter">
+                                                <Setter Property="MinWidth" Value="340" />
+                                                <Setter Property="MaxHeight" Value="560" />
+                                                <Setter Property="Padding" Value="8" />
+                                            </Style>
+                                        </Flyout.FlyoutPresenterStyle>
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="{l:Tr Key=NowPlaying_Queue}" Style="{StaticResource BodyStrongTextBlockStyle}"
+                                                       Margin="8,4,0,0" />
+                                            <ListView ItemsSource="{x:Bind ViewModel.FullQueue}" SelectionMode="None"
+                                                      ItemTemplate="{StaticResource QueueItemTemplate}" />
+                                        </StackPanel>
+                                    </Flyout>
+                                </FlyoutBase.AttachedFlyout>
+                            </HyperlinkButton>
+                        </Grid>
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.NextInQueue}" ItemTemplate="{StaticResource QueueItemTemplate}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

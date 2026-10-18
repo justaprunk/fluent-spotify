@@ -21,6 +21,12 @@ public sealed record PlaylistDetails(
     int TotalItems,
     bool ContentsAvailable);
 
+/// <summary>Элемент очереди воспроизведения: трек или эпизод подкаста.</summary>
+public sealed record QueueEntry(string Uri, string Title, string Subtitle, string? ImageUrl);
+
+/// <summary>Артист из GET /artists/{id}.</summary>
+public sealed record ArtistDetails(string Id, string Uri, string Name, string? ImageUrl);
+
 /// <summary>
 /// 401 или 403 «Insufficient client scope»: у токена нет нужных разрешений —
 /// пользователю нужно войти заново, чтобы выдать новые скоупы.
@@ -382,7 +388,11 @@ public class SpotifyApiClient : IDisposable
     private Task<JObject?> GetRawAsync(string url, CancellationToken ct = default) =>
         SendRawAsync(HttpMethod.Get, url, null, ct);
 
-    private async Task<JObject?> SendRawAsync(HttpMethod method, string url, JObject? body, CancellationToken ct = default)
+    private async Task<JObject?> SendRawAsync(HttpMethod method, string url, JObject? body, CancellationToken ct = default) =>
+        await SendRawTokenAsync(method, url, body, ct) as JObject;
+
+    /// <summary>Как SendRawAsync, но ответ может быть и массивом (например, /me/library/contains).</summary>
+    private async Task<JToken?> SendRawTokenAsync(HttpMethod method, string url, JObject? body, CancellationToken ct = default)
     {
         await EnsureValidTokenAsync();
         string? token = _currentTokens?.AccessToken;
@@ -426,7 +436,7 @@ public class SpotifyApiClient : IDisposable
             }
 
             // 201/200 без тела (или пустой снимок) — возвращаем пустой объект
-            return string.IsNullOrWhiteSpace(responseBody) ? new JObject() : JObject.Parse(responseBody);
+            return string.IsNullOrWhiteSpace(responseBody) ? new JObject() : JToken.Parse(responseBody);
         }
     }
 
@@ -512,6 +522,100 @@ public class SpotifyApiClient : IDisposable
         }
         return result;
     }
+
+    #endregion
+
+    #region Now Playing (боковая панель «Сейчас играет»)
+
+    // В феврале 2026 PUT/DELETE /me/tracks, PUT/DELETE /me/following и их .../contains удалены:
+    // вместо них общие /me/library и /me/library/contains, принимающие Spotify URI (до 40 за раз).
+    // Скоупы зависят от типа: треки — user-library-read/modify, артисты — user-follow-read/modify.
+
+    private const int MaxLibraryUris = 40;
+
+    /// <summary>Есть ли элементы (треки, артисты…) в медиатеке пользователя — по одному bool на URI.</summary>
+    public async Task<IReadOnlyList<bool>> LibraryContainsAsync(IReadOnlyList<string> uris, CancellationToken ct = default)
+    {
+        var result = new List<bool>(uris.Count);
+        for (int i = 0; i < uris.Count; i += MaxLibraryUris)
+        {
+            var chunk = uris.Skip(i).Take(MaxLibraryUris).ToList();
+            var json = await SendRawTokenAsync(HttpMethod.Get, $"me/library/contains?uris={JoinUris(chunk)}", null, ct);
+            var values = json as JArray;
+            for (int j = 0; j < chunk.Count; j++)
+            {
+                result.Add(values != null && j < values.Count && values[j].Type == JTokenType.Boolean && (bool)values[j]);
+            }
+        }
+        return result;
+    }
+
+    /// <summary>Сохранить трек в «Любимые» или подписаться на артиста.</summary>
+    public Task SaveToLibraryAsync(string uri, CancellationToken ct = default) =>
+        SendRawTokenAsync(HttpMethod.Put, $"me/library?uris={JoinUris([uri])}", null, ct);
+
+    /// <summary>Убрать трек из «Любимых» или отписаться от артиста.</summary>
+    public Task RemoveFromLibraryAsync(string uri, CancellationToken ct = default) =>
+        SendRawTokenAsync(HttpMethod.Delete, $"me/library?uris={JoinUris([uri])}", null, ct);
+
+    /// <summary>Очередь воспроизведения (GET /me/player/queue) без текущего трека.</summary>
+    public async Task<IReadOnlyList<QueueEntry>> GetQueueAsync(CancellationToken ct = default)
+    {
+        var json = await GetRawAsync("me/player/queue", ct);
+        var result = new List<QueueEntry>();
+        foreach (var item in json?["queue"] as JArray ?? new JArray())
+        {
+            string? uri = (string?)item["uri"];
+            if (string.IsNullOrEmpty(uri)) continue;
+
+            // Трек: артисты и обложка альбома; эпизод подкаста: название шоу и его обложка
+            bool isTrack = (string?)item["type"] == "track";
+            string subtitle = isTrack
+                ? string.Join(", ", (item["artists"] as JArray ?? new JArray()).Select(a => (string?)a["name"]).OfType<string>())
+                : (string?)item["show"]?["name"] ?? string.Empty;
+            var images = (isTrack ? item["album"]?["images"] : item["images"]) as JArray;
+
+            result.Add(new QueueEntry(uri, (string?)item["name"] ?? string.Empty, subtitle,
+                SmallestImage(images)));
+        }
+        return result;
+    }
+
+    /// <summary>Артист: имя и фото (followers и popularity из Web API убраны в феврале 2026).</summary>
+    public async Task<ArtistDetails?> GetArtistAsync(string artistId, CancellationToken ct = default)
+    {
+        var json = await GetRawAsync($"artists/{Uri.EscapeDataString(artistId)}", ct);
+        if (json == null || (string?)json["id"] is not { Length: > 0 } id) return null;
+
+        return new ArtistDetails(id, (string?)json["uri"] ?? $"spotify:artist:{id}",
+            (string?)json["name"] ?? string.Empty,
+            (string?)json["images"]?.FirstOrDefault()?["url"]);
+    }
+
+    /// <summary>
+    /// Название контекста воспроизведения (плейлист, альбом, артист). Для «Любимых треков»
+    /// (spotify:user:{id}:collection) и неизвестных типов — null: подпись выбирает вызывающий.
+    /// </summary>
+    public async Task<string?> GetContextNameAsync(string contextUri, CancellationToken ct = default)
+    {
+        string[] parts = contextUri.Split(':');
+        if (parts.Length != 3 || parts[0] != "spotify") return null;
+
+        string id = Uri.EscapeDataString(parts[2]);
+        var json = parts[1] switch
+        {
+            "playlist" => await GetRawAsync($"playlists/{id}?fields=name", ct),
+            "album" => await GetRawAsync($"albums/{id}", ct),
+            "artist" => await GetRawAsync($"artists/{id}", ct),
+            _ => null
+        };
+        return (string?)json?["name"];
+    }
+
+    private static string JoinUris(IEnumerable<string> uris) => string.Join(",", uris.Select(Uri.EscapeDataString));
+
+    /// <summary>Изображения Spotify идут от большего к меньшему — для миниатюр берём последнее.</summary>
+    private static string? SmallestImage(JArray? images) => (string?)images?.LastOrDefault()?["url"];
 
     #endregion
 

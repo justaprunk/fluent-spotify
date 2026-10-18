@@ -42,6 +42,7 @@ If music is already playing on another device, such as your phone or another PC,
 | 🏠 **Home** | Your playlists and Liked Songs |
 | 📃 **Playlists and Liked Songs** | Tracks load page by page, so the UI never blocks |
 | 📊 **My summary** | Top tracks, artists and genres over about a year, 6 months or 4 weeks, like Spotify Wrapped. You can save the summary as a private playlist |
+| 🎶 **Now Playing panel** | A right-side panel like the official app: playback context, large cover, a Liked Songs toggle, synced lyrics, the artist with a short bio, the track's artists with follow buttons, and the next tracks in the queue. It folds away on narrow windows |
 | 🔎 **Search** | Tracks, artists and albums |
 | ▶️ **Player bar** | Seek, volume, shuffle and repeat |
 | ⌨️ **Windows media keys** | System Media Transport Controls (SMTC) support |
@@ -49,6 +50,9 @@ If music is already playing on another device, such as your phone or another PC,
 | 🐚 **WSHM shell theme** | When enabled, the backdrop and theme come from `~/.config/wshm/theme.json` and follow the shell |
 | 🌐 **15 interface languages** | English, French, German, Dutch, Japanese, Korean, Polish, Portuguese (Brazil), Russian, Simplified and Traditional Chinese, Spanish (Latin America and Spain), Turkish and Ukrainian. The app follows the Windows display language by default; you can choose another one in Settings |
 | 📐 **Responsive layout** | Works in narrow windows too. Minimum size is 520×560 |
+
+> [!NOTE]
+> The Spotify Web API has no lyrics, artist bios, songwriter credits or monthly listener counts. In the Now Playing panel, lyrics come from the third-party service [LRCLIB](https://lrclib.net), and the bio comes from Wikipedia, found through Wikidata by the artist's Spotify ID. Both can be turned off in Settings. Liking songs and following artists needs new permissions, so after updating you'll be asked to sign in once more.
 
 > [!NOTE]
 > When "Launch Spotify in the background" is on, the official client shows the Windows media controls itself. The app's own SMTC bridge is turned off in this mode so Windows doesn't show two media cards.
@@ -164,14 +168,15 @@ fluent-spotify/
 ├── Controls/                  # SettingsCard: Windows 11 style settings row
 ├── Core/
 │   ├── Api/                   # SpotifyApiClient: SpotifyAPI.Web wrapper plus direct Web API calls
+│   ├── NowPlaying/            # LyricsService (LRCLIB), ArtistBioService (Wikidata + Wikipedia)
 │   ├── Auth/                  # PkceAuthService (PKCE sign-in), TokenStorage (DPAPI)
 │   ├── Playback/              # Background Spotify client launch, playback transfer, SMTC bridge
 │   ├── Settings/              # AppSettings / SettingsService (settings.json)
 │   └── WindowMinSize.cs       # Minimum window size (WinAppSDK 1.6 has no built-in API for it)
 ├── Localization/              # Localizer (JSON strings, CLDR plural rules) and the {l:Tr} XAML extension
 ├── Strings/                   # Translations: <language code>.json, embedded into the app
-├── ViewModels/                # MVVM with CommunityToolkit.Mvvm: Main, PlayerBar, Playlist, Search, Settings
-├── Views/                     # Pages: Home, PlaylistDetail, Search, Settings, PlayerBar
+├── ViewModels/                # MVVM with CommunityToolkit.Mvvm: Main, PlayerBar, NowPlaying, Playlist, Search, Settings
+├── Views/                     # Pages: Home, PlaylistDetail, Search, Settings, PlayerBar, NowPlaying
 └── Shared/                    # Shared WSHM shell types, vendored so the repo builds standalone
     ├── Diagnostics/           # AppLog: file logging
     └── Windows/               # FluentWindow, backdrops, themes, shell theme.json

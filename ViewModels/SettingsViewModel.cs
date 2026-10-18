@@ -76,6 +76,13 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _groupHomeByFolders;
 
+    /// <summary>Панель «Сейчас играет»: тексты песен (LRCLIB) и биография артиста (Википедия).</summary>
+    [ObservableProperty]
+    private bool _showLyrics;
+
+    [ObservableProperty]
+    private bool _showArtistBio;
+
     /// <summary>Итог экспорта или импорта папок.</summary>
     [ObservableProperty]
     private bool _isFoldersStatusOpen;
@@ -128,6 +135,8 @@ public partial class SettingsViewModel : ObservableObject
         UseShellTheme = current.UseShellTheme;
         LaunchClientInBackground = current.LaunchClientInBackground;
         GroupHomeByFolders = current.GroupHomeByFolders;
+        ShowLyrics = current.ShowLyrics;
+        ShowArtistBio = current.ShowArtistBio;
         UpdateRestartState();
         _initializing = false;
     }
@@ -180,6 +189,18 @@ public partial class SettingsViewModel : ObservableObject
     {
         if (_initializing) return;
         _settings.Update(s => s.GroupHomeByFolders = value);
+    }
+
+    partial void OnShowLyricsChanged(bool value)
+    {
+        if (_initializing) return;
+        _settings.Update(s => s.ShowLyrics = value);
+    }
+
+    partial void OnShowArtistBioChanged(bool value)
+    {
+        if (_initializing) return;
+        _settings.Update(s => s.ShowArtistBio = value);
     }
 
     public void ExportFolders(string path)

@@ -85,6 +85,23 @@
                      Title="{l:Tr Key=Settings_ClientMissingTitle}"
                      Message="{l:Tr Key=Settings_ClientMissingMessage}" />
 
+            <!-- Панель «Сейчас играет»: сторонние источники можно отключить -->
+            <TextBlock Text="{l:Tr Key=Settings_SectionNowPlaying}" Style="{StaticResource SettingsSectionHeaderStyle}" />
+
+            <controls:SettingsCard Glyph="&#xE8D2;"
+                                   Header="{l:Tr Key=Settings_Lyrics}"
+                                   Description="{l:Tr Key=Settings_LyricsDesc}">
+                <ToggleSwitch OnContent="" OffContent="" MinWidth="0"
+                              IsOn="{x:Bind ViewModel.ShowLyrics, Mode=TwoWay}" />
+            </controls:SettingsCard>
+
+            <controls:SettingsCard Glyph="&#xE77B;"
+                                   Header="{l:Tr Key=Settings_ArtistBio}"
+                                   Description="{l:Tr Key=Settings_ArtistBioDesc}">
+                <ToggleSwitch OnContent="" OffContent="" MinWidth="0"
+                              IsOn="{x:Bind ViewModel.ShowArtistBio, Mode=TwoWay}" />
+            </controls:SettingsCard>
+
             <!-- Медиатека: локальные папки плейлистов -->
             <TextBlock Text="{l:Tr Key=Settings_SectionLibrary}" Style="{StaticResource SettingsSectionHeaderStyle}" />
 
